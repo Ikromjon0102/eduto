@@ -1,0 +1,308 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Boshqaruv Paneli</title>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --light-bg: #f8f9fa;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Card Styling */
+        .content-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .content-section:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Accordion Styling */
+        .custom-accordion {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .accordion-header {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .accordion-header i {
+            margin-right: 0.5rem;
+        }
+
+        .accordion-body {
+            padding: 1rem;
+            background: white;
+            display: none;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .accordion-body.show {
+            display: block;
+        }
+
+        /* Button Styling */
+        .btn-custom {
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            width: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-custom:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Form Styling */
+        .form-control {
+            border-radius: 8px;
+            padding: 0.8rem;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+            border-color: var(--primary-color);
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <a href="{% url 'manager_page' %}" class="text-decoration-none">
+            <h2 class="text-center">
+                <i class="fas fa-school me-2"></i>
+                Admin Panel
+            </h2>
+        </a>
+
+        <div class="content-section bg-transparent text-white">
+            <h4 class="mb-4"><i class="fas fa-plus-circle me-2"></i>Qo'shish</h4>
+
+            <div class="custom-accordion">
+                <div class="accordion-header" data-target="userCollapse">
+                    <i class="fas fa-user-plus"></i>
+                    O'quvchi
+                </div>
+                <div class="accordion-body" id="userCollapse">
+                    <form action="" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form_student|crispy }}
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="reset" class="btn btn-warning flex-grow-1">
+                                <i class="fas fa-undo me-2"></i>Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-save me-2"></i>Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="custom-accordion">
+                <div class="accordion-header" data-target="groupCollapse">
+                    <i class="fas fa-users"></i>
+                    Guruh
+                </div>
+                <div class="accordion-body" id="groupCollapse">
+                    <form action="" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form_group|crispy }}
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="reset" class="btn btn-warning flex-grow-1">
+                                <i class="fas fa-undo me-2"></i>Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-save me-2"></i>Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="custom-accordion">
+                <div class="accordion-header" data-target="courseCollapse">
+                    <i class="fas fa-book"></i>
+                    Kurs
+                </div>
+                <div class="accordion-body" id="courseCollapse">
+                    <form action="" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form_course|crispy }}
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="reset" class="btn btn-warning flex-grow-1">
+                                <i class="fas fa-undo me-2"></i>Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-save me-2"></i>Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-2">
+            <a href="{% url 'pdf_report' %}" class="btn btn-custom mb-2">
+                <i class="fas fa-file-pdf me-2"></i>PDF Hisobot
+            </a>
+            <a href="{% url 'excel_report' %}" class="btn btn-custom mb-2">
+                <i class="fas fa-file-excel me-2"></i>Excel Export
+            </a>
+            <a href="{% url 'excel_page' %}" class="btn btn-custom mb-2">
+                <i class="fas fa-file-import me-2"></i>Excel Import
+            </a>
+            <a href="{% url 'payment_add' %}" class="btn btn-custom">
+                <i class="fas fa-money-bill-wave me-2"></i>To'lov
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const targetId = header.getAttribute('data-target');
+                    const targetBody = document.getElementById(targetId);
+
+                    if (targetBody.classList.contains('show')) {
+                        targetBody.classList.remove('show');
+                    } else {
+                        document.querySelectorAll('.accordion-body').forEach(body =>
+                            body.classList.remove('show')
+                        );
+                        targetBody.classList.add('show');
+                    }
+                });
+            });
+
+            // Mobile menu toggle
+            const menuToggle = document.createElement('button');
+            menuToggle.classList.add('btn', 'btn-primary', 'd-md-none', 'position-fixed');
+            menuToggle.style.cssText = 'top: 1rem; right: 1rem; z-index: 1001;';
+            menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            document.body.appendChild(menuToggle);
+
+            menuToggle.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+
+</html>

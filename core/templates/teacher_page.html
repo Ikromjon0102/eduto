@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- <div class="col-md-9 p-4"> -->
+<!-- Teacher Header Section -->
+<div class="content-section mb-4">
+  <div class="d-flex align-items-center mb-3">
+    <div class="teacher-avatar me-4">
+      <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+        style="width: 60px; height: 60px; font-size: 24px;">
+        {{ teacher.first_name|first }}{{ teacher.last_name|first }}
+      </div>
+    </div>
+    <div>
+      <h1 class="mb-0">{{ teacher.first_name }} {{ teacher.last_name }}</h1>
+      <p class="text-muted mb-0">Teacher Dashboard</p>
+    </div>
+  </div>
+</div>
+
+<!-- Groups Section -->
+<div class="row">
+  <div class="col-12">
+    {% for item in groups_with_students %}
+    <div class="content-section mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h3 class="mb-0">{{ item.group.name }}</h3>
+          <span class="badge bg-primary">{{ item.group.student_count }} students</span>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse"
+          data-bs-target="#group{{ forloop.counter }}">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </div>
+
+      <div class="collapse" id="group{{ forloop.counter }}">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th class="text-center" style="width: 50px">#</th>
+                <th>Full Name</th>
+                <th>Course</th>
+                <th>Group</th>
+                <th>Schedule</th>
+                <th>Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for student in item.students %}
+              <tr>
+                <td class="text-center">{{ forloop.counter }}</td>
+                <td>
+                  <a href="{% url 'student_profile' student.pk %}" class="text-decoration-none">
+                    <div class="d-flex align-items-center student-link">
+                      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2"
+                        style="width: 35px; height: 35px;">
+                        <i class="fas fa-user text-primary"></i>
+                      </div>
+                      <span class="student-name">{{ student.first_name }} {{ student.last_name }}</span>
+                    </div>
+                  </a>
+                </td>
+                <td>{{ student.group.course.name }}</td>
+                <td>{{ student.group.name }}</td>
+                <td>
+                  <i class="far fa-clock me-1"></i>
+                  {{ student.group.schedule }}
+                </td>
+                <td>
+                  <a href="tel:{{ student.phone }}" class="text-decoration-none">
+                    <i class="fas fa-phone me-1"></i>
+                    {{ student.phone }}
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-4">
+                  <i class="fas fa-users-slash text-muted mb-2" style="font-size: 24px;"></i>
+                  <p class="mb-0">No students in this group</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+</div>
+
+<style>
+  .student-link {
+    transition: all 0.3s ease;
+  }
+
+  .student-link:hover {
+    transform: translateX(5px);
+  }
+
+  .student-link:hover .student-name {
+    color: #0d6efd;
+  }
+
+  .student-name {
+    transition: color 0.3s ease;
+  }
+
+  .fa-chevron-down {
+    transition: transform 0.3s ease;
+  }
+
+  [aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(collapse => {
+      new bootstrap.Collapse(collapse, {
+        toggle: false
+      });
+    });
+  });
+</script>
+{% endblock %}

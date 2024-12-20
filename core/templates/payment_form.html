@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">To'lov qo'shish</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form.course }}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.group|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.student|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.month|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.amount|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {{ form.comment|as_crispy_field }}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Saqlash
+                            </button>
+                            <a href="{% url 'payments' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Bekor qilish
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    {% for message in messages %}
+    <div class="toast align-items-center {% if message.tags %}bg-{{ message.tags }}{% endif %} text-white border-0"
+        role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Toast xabarlarini ishga tushirish
+        var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+        var toastList = toastElList.map(function (toastEl) {
+            return new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 3000
+            })
+        })
+        toastList.forEach(toast => toast.show())
+
+        // Guruh o'zgarganda o'quvchilarni yuklash
+        const groupSelect = document.getElementById('id_group');
+        const studentSelect = document.getElementById('id_student');
+        const amountInput = document.getElementById('id_amount');
+        const courseInput = document.getElementById('id_course');
+
+        function loadStudents() {
+            const groupId = groupSelect.value;
+            if (groupId) {
+                // O'quvchilarni yuklash
+                fetch(`/load-students/?group=${groupId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        studentSelect.innerHTML = '<option value="">---------</option>';
+                        data.students.forEach(student => {
+                            const option = new Option(student.name, student.id);
+                            studentSelect.add(option);
+                        });
+                    });
+
+                // Guruh ma'lumotlarini yuklash
+                fetch(`/api/groups/${groupId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        amountInput.value = data.course.price_per_month;
+                        courseInput.value = data.course.id;
+                    });
+            } else {
+                studentSelect.innerHTML = '<option value="">Avval guruhni tanlang</option>';
+                amountInput.value = '';
+                courseInput.value = '';
+            }
+        }
+
+        groupSelect.addEventListener('change', loadStudents);
+
+        // Sahifa yuklanganda, agar guruh tanlangan bo'lsa
+        if (groupSelect.value) {
+            loadStudents();
+        }
+    });
+</script>
+{% endblock %}

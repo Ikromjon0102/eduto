@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Faylni Yuklash</title>
+</head>
+<body>
+    <h1>Excel Faylni Yuklash</h1>
+    <form method="POST" action="{% url 'import_excel' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="excel_file">Excel faylini tanlang:</label>
+        <input type="file" name="excel_file" accept=".xlsx, .xls" required>
+        <button type="submit">Yuklash</button>
+    </form>
+
+    <br>
+
+<h2>{{ group.name }} uchun to‘lovlarni yaratish</h2>
+<button onclick="createPayments()">To‘lovlarni yaratish</button>
+
+
+
+
+</body>
+</html>

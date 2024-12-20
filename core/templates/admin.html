@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- <div class="col-md-9 p-4"> -->
+<div class="content-section">
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Ustozlar</h6>
+              <h3 class="mb-0">{{ teachers|length }}</h3>
+            </div>
+            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+              <i class="fas fa-chalkboard-teacher text-primary"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Kurslar</h6>
+              <h3 class="mb-0">{{ courses|length }}</h3>
+            </div>
+            <div class="rounded-circle bg-success bg-opacity-10 p-3">
+              <i class="fas fa-book text-success"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Guruhlar</h6>
+              <h3 class="mb-0">{{ groups|length }}</h3>
+            </div>
+            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+              <i class="fas fa-users text-info"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Studentlar</h6>
+              <h3 class="mb-0">{{ students|length }}</h3>
+            </div>
+            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+              <i class="fas fa-user-graduate text-warning"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <ul class="nav nav-pills mb-4" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active px-4" data-bs-toggle="tab" data-bs-target="#teachers" type="button">
+            <i class="fas fa-chalkboard-teacher me-2"></i>Ustozlar
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-4" data-bs-toggle="tab" data-bs-target="#courses" type="button">
+            <i class="fas fa-book me-2"></i>Kurslar
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-4" data-bs-toggle="tab" data-bs-target="#groups" type="button">
+            <i class="fas fa-users me-2"></i>Guruhlar
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-4" data-bs-toggle="tab" data-bs-target="#students" type="button">
+            <i class="fas fa-user-graduate me-2"></i>Studentlar
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="teachers">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-center" style="width: 50px">#</th>
+                  <th>O'qituvchi</th>
+                  <th>Guruhlar</th>
+                  <th>Studentlar</th>
+                  <th>Harakat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ustoz in teachers %}
+                <tr>
+                  <td class="text-center">{{ ustoz.id }}</td>
+                  <td>
+                    <a href="{% url 'teacher_page' ustoz.id %}" class="text-decoration-none">
+                      <div class="d-flex align-items-center teacher-link">
+                        <div
+                          class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                          style="width: 40px; height: 40px;">
+                          <i class="fas fa-user text-primary"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0">{{ ustoz.first_name }} {{ ustoz.last_name }}</h6>
+                          <small class="text-muted">@{{ ustoz.username }}</small>
+                        </div>
+                      </div>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ ustoz.total_groups }} guruh</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">{{ ustoz.total_students }} student</span>
+                  </td>
+                  <td>
+                    <a href="{% url 'teacher_page' ustoz.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-eye me-1"></i> Ko'rish
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="courses">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>Kurs</th>
+                  <th>Davomiyligi</th>
+                  <th>Narxi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for kurs in courses %}
+                <tr>
+                  <td>{{ kurs.id }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div
+                        class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                        style="width: 40px; height: 40px;">
+                        <i class="fas fa-book text-success"></i>
+                      </div>
+                      <h6 class="mb-0">{{ kurs.name }}</h6>
+                    </div>
+                  </td>
+                  <td>{{ kurs.duration_months }} oy</td>
+                  <td>
+                    <span class="badge bg-success">{{ kurs.price_per_month }} so'm/oy</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="groups">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>Guruh</th>
+                  <th>O'qituvchi</th>
+                  <th>Studentlar</th>
+                  <th>Jadval</th>
+                  <th>Sana</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for group in groups %}
+                <tr>
+                  <td>{{ group.id }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div
+                        class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                        style="width: 40px; height: 40px;">
+                        <i class="fas fa-users text-info"></i>
+                      </div>
+                      <div>
+                        <h6 class="mb-0">{{ group.name }}</h6>
+                        <small class="text-muted">{{ group.course.name }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ group.teacher.username }}</td>
+                  <td>
+                    <span class="badge bg-primary">{{ group.student_count }} ta</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ group.schedule }}</span>
+                  </td>
+                  <td>
+                    <small class="text-muted">
+                      <i class="fas fa-calendar-alt me-1"></i>
+                      {{ group.start_date|date:"d/m/Y" }} - {{ group.end_date|date:"d/m/Y" }}
+                    </small>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="students">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>Student</th>
+                  <th>Guruh</th>
+                  <th>O'qituvchi</th>
+                  <th>Aloqa</th>
+                  <th>Harakat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for student in students %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div
+                        class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                        style="width: 40px; height: 40px;">
+                        <i class="fas fa-user-graduate text-warning"></i>
+                      </div>
+                      <div>
+                        <h6 class="mb-0">{{ student.first_name }} {{ student.last_name }}</h6>
+                        <small class="text-muted">{{ student.group.course.name }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ student.group.name }}</span>
+                  </td>
+                  <td>{{ student.group.teacher }}</td>
+                  <td>
+                    <a href="tel:{{ student.phone }}" class="btn btn-sm btn-outline-success">
+                      <i class="fas fa-phone me-1"></i>{{ student.phone }}
+                    </a>
+                  </td>
+                  <td>
+                    <a href="{% url 'student_profile' student.pk %}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-eye me-1"></i> Ko'rish
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<style>
+  .nav-pills .nav-link {
+    color: #6c757d;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-pills .nav-link:hover {
+    background-color: #f8f9fa;
+  }
+
+  .nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+
+  .table-hover tbody tr {
+    transition: all 0.3s ease;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .teacher-link,
+  .student-link {
+    transition: all 0.3s ease;
+  }
+
+  .teacher-link:hover,
+  .student-link:hover {
+    transform: translateX(5px);
+  }
+
+  .badge {
+    font-weight: 500;
+    padding: 0.5em 1em;
+  }
+
+  .card {
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+  }
+</style>
+{% endblock content %}

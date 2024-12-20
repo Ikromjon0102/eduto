@@ -1,0 +1,214 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Boshqaruv Paneli</title>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --light-bg: #f8f9fa;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+        }
+
+        .btn-custom {
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            width: 100%;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-custom:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-content {
+            border-radius: 10px;
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-footer .btn {
+            border-radius: 5px;
+        }
+
+        .divider {
+            margin: 2rem 0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <a href="{% url 'manager_page' %}" class="text-decoration-none">
+            <h2 class="text-center">
+                <i class="fas fa-school me-2"></i>
+                Admin Panel
+            </h2>
+        </a>
+
+        <div class="mt-4">
+            <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="fas fa-user-plus me-2"></i>O'quvchi qo'shish
+            </button>
+            <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                <i class="fas fa-users me-2"></i>Guruh qo'shish
+            </button>
+            <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                <i class="fas fa-book me-2"></i>Kurs qo'shish
+            </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mt-4">
+            <a href="{% url 'pdf_report' %}" class="btn btn-custom">
+                <i class="fas fa-file-pdf me-2"></i>PDF Hisobot
+            </a>
+            <a href="{% url 'excel_report' %}" class="btn btn-custom">
+                <i class="fas fa-file-excel me-2"></i>Excel Export
+            </a>
+            <a href="{% url 'excel_page' %}" class="btn btn-custom">
+                <i class="fas fa-file-import me-2"></i>Excel Import
+            </a>
+            <a href="{% url 'payment_add' %}" class="btn btn-custom">
+                <i class="fas fa-money-bill-wave me-2"></i>To'lov
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Modallar -->
+    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addStudentModalLabel">O'quvchi qo'shish</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{% url 'manager_page' %}" method="post">
+                        {% csrf_token %}
+                        {{ form_student|crispy }}
+                        <div class="modal-footer">
+                            <button type="reset" class="btn btn-warning">
+                                Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{% url 'manager_page' %}" method="post">
+                        {% csrf_token %}
+                        {{ form_group|crispy }}
+                        <div class="modal-footer">
+                            <button type="reset" class="btn btn-warning">
+                                Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCourseModalLabel">Kurs qo'shish</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{% url 'manager_page' %}" method="post">
+                        {% csrf_token %}
+                        {{ form_course|crispy }}
+                        <div class="modal-footer">
+                            <button type="reset" class="btn btn-warning">
+                                Tozalash
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Saqlash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

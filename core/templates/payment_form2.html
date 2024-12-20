@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">To'lov qo'shish</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.group|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.student|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.month|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.amount|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {{ form.comment|as_crispy_field }}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Saqlash
+                            </button>
+                            <a href="{% url 'manager_page' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Bekor qilish
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Guruh o'zgarganda o'quvchilarni yuklash
+        const groupSelect = document.getElementById('id_group');
+        const studentSelect = document.getElementById('id_student');
+        const amountInput = document.getElementById('id_amount');
+
+        function loadStudents() {
+            const groupId = groupSelect.value;
+            if (groupId) {
+                fetch(`/load-students/?group_id=${groupId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        studentSelect.innerHTML = '<option value="">---------</option>';
+                        data.forEach(student => {
+                            const option = document.createElement('option');
+                            option.value = student.id;
+                            option.textContent = student.name;
+                            studentSelect.appendChild(option);
+                        });
+                        // Guruh o'zgarganda o'quvchini tozalash
+                        studentSelect.value = '';
+                    });
+
+                // Guruh tanlanganda to'lov summasini avtomatik to'ldirish
+                fetch(`/api/groups/${groupId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        amountInput.value = data.course.price_per_month;
+                    });
+            } else {
+                studentSelect.innerHTML = '<option value="">Avval guruhni tanlang</option>';
+                studentSelect.value = '';
+                amountInput.value = '';
+            }
+        }
+
+        groupSelect.addEventListener('change', loadStudents);
+
+        // Sahifa yuklanganda, agar guruh tanlangan bo'lsa o'quvchilarni yuklash
+        if (groupSelect.value) {
+            loadStudents();
+        }
+    });
+</script>
+{% endblock %}
