@@ -1,21 +1,33 @@
+import json
+
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.views import LoginView
+from django.db.models.functions import Concat
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Avg, Value, Subquery, OuterRef
 from datetime import date
 import openpyxl
 from django.http import HttpResponse, JsonResponse
 from reportlab.pdfgen import canvas
 from django.views import View
 from .models import *
-from .forms import UserCreateForm, CourseCreateForm, GroupCreateForm, PaymentPersonalForm, PaymentForm
+from .forms import UserCreateForm, CourseCreateForm, GroupCreateForm, PaymentPersonalForm, PaymentForm, GradeForm
 from .models import User, Group, Course
 from django.views.generic import ListView, CreateView
 from django.utils import timezone
 from datetime import datetime
 from .models import Payment
+
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'  # HTML fayl nomi
+    redirect_authenticated_user = True  # Agar foydalanuvchi allaqachon login bo'lsa, uni boshqa sahifaga yo'naltirish
+    success_url = reverse_lazy('teacher_profile')
 
 
 class Profile(View):
@@ -529,3 +541,343 @@ class PaymentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def get_success_url(self):
         return reverse('student_profile', kwargs={'pk': self.object.student.id})
+
+
+def is_teacher(user):
+    return user.role == 'teacher'
+
+
+# @login_required
+# @user_passes_test(is_teacher)
+# def teacher_profile(request):
+#     teacher = request.user
+#     context = {
+#         'groups': Group.objects.filter(teacher=teacher),
+#         'students_count': User.objects.filter(group__teacher=teacher, role='student').count(),
+#         # 'schedule': Group.objects.filter(teacher=teacher).values('name', 'schedule', 'course__name')
+#         'schedule': Group.objects.filter(teacher=teacher)
+#     }
+#     return render(request, 'teacher/profile.html', context)
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_profile(request):
+    teacher = request.user
+
+    # Guruhlar va o'quvchilar
+    groups = Group.objects.filter(teacher=teacher)
+    students_count = User.objects.filter(group__teacher=teacher, role='student').count()
+
+    # To'lov statistikalari
+    payments = Payment.objects.filter(group__teacher=teacher)
+    total_paid_amount = payments.filter(status='paid').aggregate(total=Sum('amount'))['total'] or 0
+    total_unpaid_count = payments.filter(status='unpaid').values('student').distinct().count()
+    paid_students_count = Payment.objects.filter(group__teacher=teacher, status='paid').values('student').distinct().count()
+    unpaid_students_count = students_count - paid_students_count
+
+    context = {
+        'groups': groups,
+        'total_paid_amount': total_paid_amount,
+        'total_unpaid_count': total_unpaid_count,
+        'students_count': students_count,
+        'paid_students_count': paid_students_count,
+        'unpaid_students_count': unpaid_students_count,
+        'schedule': groups
+    }
+
+    return render(request, 'teacher/profile.html', context)
+
+
+@login_required
+@user_passes_test(is_teacher)
+def unpaid_students(request):
+    teacher = request.user
+
+    # Teacher guruhidagi barcha o'quvchilar
+    all_students = User.objects.filter(group__teacher=teacher, role='student')
+
+    # To'lov qilgan talabalar
+    paid_students_ids = Payment.objects.filter(group__teacher=teacher, status='paid').values_list('student_id', flat=True)
+
+    # To'lov qilmagan talabalar
+    unpaid_students = all_students.exclude(id__in=paid_students_ids).values(
+        'id', 'first_name', 'last_name', 'phone', 'group__name'
+    ).distinct()
+
+    return JsonResponse(list(unpaid_students), safe=False)
+
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_groups(request):
+    teacher = request.user
+    groups = Group.objects.filter(teacher=teacher)
+    return render(request, 'teacher/groups.html', {'groups': groups})
+
+
+# @login_required
+# @user_passes_test(is_teacher)
+# def teacher_students(request):
+#     teacher = request.user
+#     students = User.objects.filter(group__teacher=teacher, role='student')
+#     return render(request, 'teacher/students.html', {'students': students})
+
+from django.db.models import Subquery, OuterRef, Avg, Max
+
+from django.db.models import Subquery, OuterRef, Avg
+
+
+# @login_required
+# @user_passes_test(is_teacher)
+# def teacher_students(request):
+#     teacher = request.user
+#
+#     # Subquery to get the latest payment month for each student
+#     latest_payment_month = Payment.objects.filter(
+#         student=OuterRef('pk')  # Use 'student' instead of 'user'
+#     ).order_by('-month').values('month')[:1]
+#
+#     # Subquery to get the payment status for the latest payment month
+#     latest_payment_status = Payment.objects.filter(
+#         student=OuterRef('pk'),  # Use 'student' instead of 'user'
+#         month=Subquery(latest_payment_month)
+#     ).values('status')[:1]
+#
+#     students = User.objects.filter(group__teacher=teacher, role='student').annotate(
+#         group_name=Max('group__name'),
+#         course_months=Max('group__course__duration_months'),
+#         current_month=Subquery(latest_payment_month),
+#         total_payments=Sum('payment__amount'),
+#         current_month_status=Subquery(latest_payment_status),
+#         average_grade=Avg('grades__grade')
+#     )
+#
+#     return render(request, 'teacher/students.html', {'students': students})
+# from django.db.models import F, ExpressionWrapper, IntegerField
+# from django.db.models.functions import TruncMonth
+# from datetime import datetime
+#
+#
+# @login_required
+# @user_passes_test(is_teacher)
+# def teacher_students(request):
+#     teacher = request.user
+#
+#     # Current date for calculation
+#     today = datetime.today()
+#
+#     # Calculate the current course month
+#     students = User.objects.filter(group__teacher=teacher, role='student').annotate(
+#         group_name=Max('group__name'),
+#         course_months=F('group__course__duration_months'),
+#         course_start_date=F('group__start_date'),
+#         current_month=ExpressionWrapper(
+#             (today.year - F('group__start_date__year')) * 12 +
+#             (today.month - F('group__start_date__month')) + 1,
+#             output_field=IntegerField()
+#         ),
+#         total_payments=Sum('payment__amount'),
+#         current_month_status=Subquery(
+#             Payment.objects.filter(
+#                 student=OuterRef('pk'),
+#                 month=(today.year - F('group__start_date__year')) * 12 +
+#                       (today.month - F('group__start_date__month')) + 1
+#             ).values('status')[:1]
+#         ),
+#         average_grade=Avg('grades__grade')
+#     )
+#     return render(request, 'teacher/students.html', {'students': students})
+
+from datetime import datetime
+from django.db.models import Sum, F
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_students(request):
+    teacher = request.user
+    today = datetime.today()
+
+    students = User.objects.filter(group__teacher=teacher, role='student').annotate(
+        total_payments=Sum('payment__amount'),
+        course_months=F('group__course__duration_months'),
+        course_start_date=F('group__start_date'),
+        monthly_price=F('group__course__price_per_month')
+    )
+
+    student_data = []
+    for student in students:
+        current_month = (today.year - student.course_start_date.year) * 12 + (
+            today.month - student.course_start_date.month
+        ) + 1
+        course_months = student.course_months
+        required_payment = current_month * student.monthly_price
+        payment_status = "Paid" if (student.total_payments and student.total_payments >=
+                                    required_payment) else "Unpaid"
+
+        student_data.append({
+            'username': student.username,
+            'full_name': f"{student.first_name} {student.last_name}",
+            'group_name': student.group.name if student.group else "Noma'lum",
+            'current_month': current_month,
+            'total_payments': student.total_payments or 0,
+            'required_payment': required_payment,
+            'payment_status': payment_status,
+            'course_months':course_months,
+        })
+
+    return render(request, 'teacher/students.html', {'students': student_data})
+
+
+
+
+@login_required
+@user_passes_test(is_teacher)
+def add_grade_profile(request):
+    if request.method == 'POST':
+        form = GradeForm(request.POST)
+        if form.is_valid():
+            grade = form.save(commit=False)
+            grade.teacher = request.user
+            grade.save()
+            messages.success(request, "Baho muvaffaqiyatli qo'shildi")
+            return redirect('teacher_students')
+    else:
+        form = GradeForm()
+
+    teacher = request.user
+    students = User.objects.filter(group__teacher=teacher, role='student')
+    context = {
+        'form': form,
+        'students': students,
+        'recent_grades': Grade.objects.filter(teacher=teacher).order_by('-date')[:10]
+    }
+    return render(request, 'teacher/add_grade.html', context)
+
+@login_required
+@user_passes_test(is_teacher)
+def get_group_students(request, group_id):
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    students = group.users.filter(role='student').values(
+        'id', 'first_name', 'last_name', 'phone', 'image'
+    ).annotate(
+        average_grade=Avg('grades__grade'),
+        full_name=Concat('first_name', Value(' '), 'last_name')
+    )
+
+
+from django.db.models import Avg, Value
+from django.db.models.functions import Concat
+from django.utils.timezone import now
+
+from django.templatetags.static import static
+from django.conf import settings
+from urllib.parse import urljoin
+
+@login_required
+@user_passes_test(is_teacher)
+def get_group_students(request, group_id):
+    group = get_object_or_404(Group, id=group_id, teacher=request.user)
+    today = now().date()  # Bugungi sana
+
+    students = group.users.filter(role='student').annotate(
+        average_grade=Avg('grades__grade'),
+        full_name=Concat('first_name', Value(' '), 'last_name'),
+        today_grade=Subquery(
+            Grade.objects.filter(
+                student=OuterRef('id'),
+                date=today
+            ).values('grade')[:1]
+        )
+    ).values(
+        'id', 'full_name', 'phone', 'image', 'average_grade', 'today_grade'
+    )
+
+    # Har bir studentning rasmiga to'liq URL qo'shish
+    students_with_images = []
+    for student in students:
+        if student['image']:
+            student['image'] = urljoin(settings.MEDIA_URL, student['image'])  # Media URL bilan birlashtirish
+        else:
+            student['image'] = static('default_profile.png')  # Agar rasm bo'lmasa, default rasm
+        students_with_images.append(student)
+
+    return JsonResponse(students_with_images, safe=False)
+
+
+
+
+
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_teacher)
+def add_grade(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            student_id = data.get('student')
+            grade_value = data.get('grade')
+
+            if not student_id or not grade_value:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Student ID va baho talab qilinadi'
+                }, status=400)
+
+            student = User.objects.get(id=student_id, role='student')
+
+            # Bugungi sanani olish
+            today = timezone.now().date()
+
+            # Bugungi kunga mavjud bahoni tekshirish
+            existing_grade = Grade.objects.filter(
+                student=student,
+                teacher=request.user,
+                date=today  # Baholash bugungi sanaga mos bo'lishi kerak
+            ).first()
+
+            if existing_grade:
+                # Agar bugungi kunga baho bo'lsa, uni yangilaymiz
+                existing_grade.grade = grade_value
+                existing_grade.save()
+            else:
+                # Agar baho yo'q bo'lsa, yangi baho qo'shamiz
+                Grade.objects.create(
+                    student=student,
+                    teacher=request.user,
+                    grade=grade_value,
+                    date=today
+                )
+
+            # O'rtacha bahoni hisoblash
+            avg_grade = Grade.objects.filter(
+                student=student
+            ).aggregate(Avg('grade'))['grade__avg']
+
+            return JsonResponse({
+                'success': True,
+                'average_grade': avg_grade,
+                'message': 'Baho muvaffaqiyatli qo\'shildi yoki yangilandi'
+            })
+
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'O\'quvchi topilmadi'
+            }, status=404)
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+    return JsonResponse({
+        'success': False,
+        'error': 'Faqat POST so\'rovlar qabul qilinadi'
+    }, status=405)

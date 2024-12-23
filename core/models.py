@@ -103,31 +103,6 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.group.name} - {self.month}-oy ({self.status})"
 
-    # def clean(self):
-    #     if self.student and self.group and self.student.group != self.group:
-    #         raise ValidationError("O'quvchi bu guruhga tegishli emas!")
-    #
-    #     if self.month and self.group and self.month > self.group.course.duration_months:
-    #         raise ValidationError(
-    #             f"Oy raqami kurs davomiyligidan ({self.group.course.duration_months}) oshmasligi kerak!")
-
-    # def clean(self):
-    #     # To'lov summasini tekshirish
-    #     # if self.amount < self.course.price_per_month:
-    #     #     raise ValidationError(
-    #     #         f"To'lov summasi kurs narxidan ({self.course.price_per_month}) kam bo'lmasligi kerak!")
-    #
-    #     # Bir oy uchun qayta to'lov qilinishini tekshirish
-    #     if not self.pk:  # yangi to'lov bo'lsa
-    #         if Payment.objects.filter(
-    #                 student=self.student,
-    #                 group=self.group,
-    #                 month=self.month,
-    #                 course=self.course,
-    #                 status='paid'
-    #         ).exists():
-    #             raise ValidationError(f"{self.month}-oy uchun to'lov allaqachon amalga oshirilgan!")
-
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)

@@ -1,0 +1,27 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}"> <!-- CSS faylni kerakli joydan chaqiring -->
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }} <!-- Django formani to'g'ridan-to'g'ri render qiladi -->
+            <button type="submit">Login</button>
+        </form>
+
+        {% if form.non_field_errors %}
+            <div class="error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+{% extends 'teacher_base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-users me-2"></i>O'quvchilar ro'yxati
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Foydalanuvchi</th>
+                        <th>Guruh</th>
+                        <th>Kurs jami oy</th>
+                        <th>Joriy oy</th>
+                        <th>Jami to'lov</th>
+                        <th>Kerakli to'lov</th>
+                        <th>To'lov holati</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr class="{% if student.payment_status == 'Paid' %} table-success {% else %} table-danger {% endif %}">
+                        <td>{{ student.full_name }}</td>
+                        <td>{{ student.group_name }}</td>
+                        <td>{{ student.course_months }}</td>
+                        <td>{{ student.current_month }}</td>
+                        <td>{{ student.total_payments }}</td>
+                        <td>{{ student.required_payment }}</td>
+                        <td>{{ student.payment_status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Baholash Modal -->
+<div class="modal fade" id="addGradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-star me-2"></i>
+                    <span id="studentName"></span> - Baholash
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'add_grade_profile' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="student" id="studentId">
+                    <div class="mb-3">
+                        <label class="form-label">Baho</label>
+                        <select name="grade" class="form-select" required>
+                            <option value="">Tanlang</option>
+                            <option value="5">5 - A'lo</option>
+                            <option value="4">4 - Yaxshi</option>
+                            <option value="3">3 - Qoniqarli</option>
+                            <option value="2">2 - Qoniqarsiz</option>
+                            <option value="1">1 - Yomon</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Izoh</label>
+                        <textarea name="comment" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Modal ochilganda o'quvchi ma'lumotlarini to'ldirish
+    const addGradeModal = document.getElementById('addGradeModal')
+    addGradeModal.addEventListener('show.bs.modal', event => {
+        const button = event.relatedTarget
+        const studentId = button.getAttribute('data-student-id')
+        const studentName = button.getAttribute('data-student-name')
+
+        addGradeModal.querySelector('#studentId').value = studentId
+        addGradeModal.querySelector('#studentName').textContent = studentName
+    })
+</script>
+{% endblock %}
+{% endblock %}

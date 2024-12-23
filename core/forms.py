@@ -1,8 +1,8 @@
-from django import forms
-from django.db.models import Model
+
 from django.forms import ModelForm
 from .models import User, Course, Group, Payment, User
-
+from django import forms
+from .models import Grade
 
 class UserCreateForm(ModelForm):
     class Meta:
@@ -104,4 +104,15 @@ class PaymentPersonalForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3
             })
+        }
+
+
+
+
+class GradeForm(forms.ModelForm):
+    class Meta:
+        model = Grade
+        fields = ['student', 'grade', 'comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={'rows': 3}),
         }
