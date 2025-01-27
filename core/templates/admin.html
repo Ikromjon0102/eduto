@@ -110,7 +110,7 @@
               <tbody>
                 {% for ustoz in teachers %}
                 <tr>
-                  <td class="text-center">{{ ustoz.id }}</td>
+                  <td class="text-center">{{ forloop.counter }}</td>
                   <td>
                     <a href="{% url 'teacher_page' ustoz.id %}" class="text-decoration-none">
                       <div class="d-flex align-items-center teacher-link">
@@ -188,6 +188,7 @@
                   <th style="width: 50px">#</th>
                   <th>Guruh</th>
                   <th>O'qituvchi</th>
+                  <th>Xona</th>
                   <th>Studentlar</th>
                   <th>Jadval</th>
                   <th>Sana</th>
@@ -211,6 +212,7 @@
                     </div>
                   </td>
                   <td>{{ group.teacher.username }}</td>
+                  <td>{{ group.room }}</td>
                   <td>
                     <span class="badge bg-primary">{{ group.student_count }} ta</span>
                   </td>

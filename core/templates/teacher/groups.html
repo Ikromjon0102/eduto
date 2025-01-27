@@ -72,6 +72,7 @@
                             <tr>
                                 <th>F.I.O</th>
                                 <th>Telefon</th>
+                                <th>Jami baholar</th>
                                 <th>O'rtacha ball</th>
                                 <th>Bugungi baho</th>
                                 <th>Baholash</th>
@@ -239,7 +240,8 @@
                 <img src="${student.image}" alt="Profile" class="rounded-circle me-2" style="width: 32px; height: 32px;">
                 ${student.full_name}
             </td>
-            <td>${student.phone || '-'}</td>
+            <td>${(student.phone || '-').split('-')[0].trim()}</td>
+            <td>${student.sum }</td>
             <td class="average-grade-${student.id}">${student.average_grade ? student.average_grade.toFixed(1) : '-'}</td>
             <td class="today-grade-${student.id}">${student.today_grade ? student.today_grade : '-'}</td>
             <td>

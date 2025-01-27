@@ -4,7 +4,7 @@ from django.db import models
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from tensorflow import group
 
 
 # Foydalanuvchi modeli
@@ -19,8 +19,12 @@ class User(AbstractUser):
     image = models.ImageField(default='profile.png')
     group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True, related_name='users')
 
+
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+
+    def full_name(self):
+        return f'{self.last_name} {self.first_name}'
 
     def get_role_display(self):
         return self.role
@@ -47,6 +51,11 @@ class Course(models.Model):
     def total_price(self):
         return self.duration_months * self.price_per_month
 
+class Room(models.Model):
+    title = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.title
 
 # Guruh modeli
 class Group(models.Model):
@@ -56,6 +65,7 @@ class Group(models.Model):
     name = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField(editable=False)
+    room = models.ForeignKey(Room, null=True, blank=True, on_delete=models.CASCADE, related_name='groups')
     schedule = models.CharField(max_length=50, choices=[
                                         ('MWF1', 'Mon-Wed-Fri-8-10'),
                                         ('MWF2', 'Mon-Wed-Fri-10-12'),
@@ -114,6 +124,8 @@ class Attendance(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'student'})
     is_present = models.BooleanField(default=False)
 
+
+
 # Baholar modeli
 class Grade(models.Model):
     student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='grades')
@@ -129,5 +141,3 @@ class Grade(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.grade} ({self.date})"
-
-

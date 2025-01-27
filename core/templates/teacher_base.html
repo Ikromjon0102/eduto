@@ -127,9 +127,11 @@
         <div class="divider"></div>
 
         <div class="mt-4">
-            <a href="{% url 'logout' %}" class="btn btn-custom">
-                <i class="fas fa-sign-out-alt me-2"></i>Chiqish
-            </a>
+            <form action="{% url 'logout' %}" method="post"> {% csrf_token %}
+                <button type="submit" class="btn btn-custom">
+                    <i class="fas fa-sign-out-alt me-2"></i>Chiqish
+                </button>
+            </form>
         </div>
     </div>
 

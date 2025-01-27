@@ -95,7 +95,6 @@
                 Admin Panel
             </h2>
         </a>
-        <div class="divider"></div>
         <div class="mt-4">
             <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                 <i class="fas fa-user-plus me-2"></i>O'quvchi
@@ -117,17 +116,22 @@
             <a href="{% url 'excel_report' %}" class="btn btn-custom">
                 <i class="fas fa-file-excel me-2"></i>Excel Export
             </a>
-            <a href="{% url 'excel_page' %}" class="btn btn-custom">
+            <a href="{% url 'import_excel' %}" class="btn btn-custom">
                 <i class="fas fa-file-import me-2"></i>Excel Import
             </a>
             <a href="{% url 'payment_add' %}" class="btn btn-custom">
                 <i class="fas fa-money-bill-wave me-2"></i>To'lov
             </a>
+            <form action="{% url 'logout' %}" method="post"> {% csrf_token %}
+                <button type="submit" class="btn btn-custom">
+                    <i class="fas fa-sign-out-alt me-2"></i>Chiqish
+                </button>
+            </form>
         </div>
     </div>
 
     <div class="main-content">
-        {% block content %}{% endblock %}
+        {% block content %}   {% endblock %}
     </div>
 
     <!-- Modallar -->

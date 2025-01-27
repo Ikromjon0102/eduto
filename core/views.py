@@ -1,5 +1,4 @@
 import json
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
@@ -26,8 +25,14 @@ from .models import Payment
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'  # HTML fayl nomi
-    redirect_authenticated_user = True  # Agar foydalanuvchi allaqachon login bo'lsa, uni boshqa sahifaga yo'naltirish
-    success_url = reverse_lazy('teacher_profile')
+    redirect_authenticated_user = True  # Foydalanuvchi login bo'lsa, yo'naltirish
+    success_url = None  # success_url ni dinamik belgilaymiz
+
+    def get_success_url(self):
+        # Foydalanuvchi roli asosida URLni tanlaymiz
+        if self.request.user.role == 'teacher':
+            return reverse_lazy('teacher_profile')
+        return reverse_lazy('manager_page')
 
 
 class Profile(View):
@@ -136,6 +141,45 @@ def generate_excel_report(request):
     workbook.save(response)
     return response
 
+
+def download_template_with_data(request):
+    # Fayl va sheet yaratish
+    workbook = openpyxl.Workbook()
+    all_sheet = workbook.active
+    all_sheet.title = 'all'
+
+    # First sheet uchun template qo'shish
+    all_sheet.append(['first_name', 'last_name', 'course_id', 'group_id', 'ustoz_id', 'phone'])
+
+    id_lar_sheet = workbook.create_sheet(title='id_lar')
+
+    # Ustozlar ro'yxatini yozish
+    teachers = User.objects.filter(role='teacher')
+    id_lar_sheet.append(['Ustoz ID', 'Ustoz Ismi'])
+    for teacher in teachers:
+        id_lar_sheet.append([teacher.id, teacher.username])
+
+    # Guruhlar ro'yxatini yozish
+    id_lar_sheet.append([])  # Bo'sh qator
+    id_lar_sheet.append(['Guruh ID', 'Guruh Nomi'])
+    groups = Group.objects.all()
+    for group in groups:
+        id_lar_sheet.append([group.id, group.name])
+
+    # Kurslar ro'yxatini yozish
+    id_lar_sheet.append([])  # Bo'sh qator
+    id_lar_sheet.append(['Kurs ID', 'Kurs Nomi'])
+    courses = Course.objects.all()
+    for course in courses:
+        id_lar_sheet.append([course.id, course.name])
+
+    # Javob qaytarish
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=import_template.xlsx'
+
+    workbook.save(response)
+    return response
+
 def import_from_excel(request):
 
     # print(request)
@@ -187,10 +231,9 @@ def import_from_excel(request):
 
     return render(request, 'upload.html')  # Agar POST bo'lmasa, formani ko'rsatish
 
+
 def excel_page(request):
     return render(request, 'payment.html')
-
-
 
 
 class PaymentView(ListView):
@@ -302,10 +345,6 @@ def group_details(request, group_id):
         return JsonResponse({'error': 'Group not found'}, status=404)
 
 
-# views.py
-
-
-
 class StudentProfileView(LoginRequiredMixin, DetailView):
     model = User
     template_name = 'students/profile.html'
@@ -378,77 +417,76 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
         return context
 
 
-# class PaymentPersonalView(View):
-#     def get(self, request, student_id, row):
-#         form = PaymentPersonalForm()
-#
-#         context = {
-#             'form':form
-#         }
-#         return render(request, 'payment_personal.html', context)
-#
-#     def post(self, request, student_id, row):
-#         student = User.objects.get(id = student_id)
-#
-#         form = PaymentPersonalForm(request.POST)
-#         if form.is_valid():
-#             payment = form.save(commit=False)
-#             payment.course = student.group.course
-#             payment.student = student
-#             payment.group = student.group
-#             payment.month = row
-#             payment.status = 'paid'
-#             payment.save()
-#         return redirect('student_profile', pk = student_id )
+class StudentProfileForTeacherView(LoginRequiredMixin, DetailView):
+    model = User
+    template_name = 'teacher/student_profile_for_teacher.html'
+    context_object_name = 'student'
 
-# class PaymentPersonalView(LoginRequiredMixin, View):
-#     def post(self, request, student_id, row):
-#         try:
-#             student = get_object_or_404(User, id=student_id)
-#
-#             # Studentning guruhi va kursi borligini tekshirish
-#             if not student.group:
-#                 messages.error(request, "O'quvchi hech qaysi guruhga biriktirilmagan!")
-#                 return redirect('student_profile', pk=student_id)
-#
-#             form = PaymentPersonalForm(request.POST)
-#             if form.is_valid():
-#                 payment = form.save(commit=False)
-#                 # Avval kursni o'rnatamiz
-#                 payment.course = student.group.course
-#                 payment.student = student
-#                 payment.group = student.group
-#                 payment.month = row
-#                 payment.status = 'paid'
-#
-#                 # Kurs narxini tekshirish
-#                 if payment.amount < payment.course.price_per_month:
-#                     messages.error(
-#                         request,
-#                         f"To'lov summasi kurs narxidan ({payment.course.price_per_month}) kam bo'lmasligi kerak!"
-#                     )
-#                     return redirect('student_profile', pk=student_id)
-#
-#                 # Oldin to'lanmaganligini tekshirish
-#                 if Payment.objects.filter(
-#                         student=student,
-#                         group=student.group,
-#                         month=row,
-#                         status='paid'
-#                 ).exists():
-#                     messages.error(request, f"{row}-oy uchun to'lov allaqachon amalga oshirilgan!")
-#                     return redirect('student_profile', pk=student_id)
-#
-#                 payment.save()
-#                 messages.success(request, f"{row}-oy uchun to'lov muvaffaqiyatli amalga oshirildi!")
-#             else:
-#                 messages.error(request, "Form to'ldirishda xatolik. Iltimos qaytadan urinib ko'ring.")
-#
-#         except Exception as e:
-#             messages.error(request, f"Xatolik yuz berdi: {str(e)}")
-#
-#         return redirect('student_profile', pk=student_id)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        student = self.object
 
+        if student.group:
+            context['course'] = student.group.course
+            context['start_date'] = student.group.start_date
+            context['end_date'] = student.group.end_date
+
+            # Hozirgi o'qiyotgan oyi
+            start_date = student.group.start_date
+            today = date.today()
+            months_studied = relativedelta(today, start_date).months + 1
+            context['current_month'] = min(months_studied, student.group.course.duration_months)
+
+            # Kurs davomiyligi bo'yicha to'lovlar ro'yxati
+            duration = student.group.course.duration_months
+            payments = Payment.objects.filter(
+                student=student,
+                group=student.group
+            ).order_by('month')
+
+            # To'lovlar lug'atini yaratish
+            payments_dict = {payment.month: payment for payment in payments}
+
+            # Barcha oylar uchun to'lovlar ro'yxati
+            all_payments = []
+            monthly_payment = student.group.course.price_per_month
+
+            for month in range(1, duration + 1):
+                if month in payments_dict:
+                    payment = payments_dict[month]
+                    all_payments.append({
+                        'month': month,
+                        'amount': payment.amount,
+                        'date': payment.date,
+                        'status': payment.status,
+                        'comment': payment.comment
+                    })
+                else:
+                    all_payments.append({
+                        'month': month,
+                        'amount': monthly_payment,
+                        'date': None,
+                        'status': 'unpaid',
+                        'comment': None
+                    })
+
+            context['all_payments'] = all_payments
+
+            # Umumiy to'langan summa
+            total_paid = payments.filter(
+                status='paid'
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            context['total_paid'] = total_paid
+
+            # Baholar
+            context['grades'] = Grade.objects.filter(student=student).order_by('-date')
+
+            # O'rtacha baho
+            if context['grades'].exists():
+                avg_grade = sum(grade.grade for grade in context['grades']) / context['grades'].count()
+                context['average_grade'] = round(avg_grade, 1)
+
+        return context
 
 class PaymentPersonalView(LoginRequiredMixin, View):
     def post(self, request, student_id, row):
@@ -487,11 +525,7 @@ class PaymentPersonalView(LoginRequiredMixin, View):
             else:
                 messages.error(request, f"Form xatosi: {form.errors}")
 
-        # except Exception as e:
-        #     print(f"Exception occurred: {str(e)}")
-        #     messages.error(request, f"Xatolik yuz berdi: {str(e)}")
-
-            return redirect('student_profile', pk=student_id)
+                return redirect('student_profile', pk=student_id)
 
 
 class PaymentHistoryView(LoginRequiredMixin, DetailView):
@@ -545,19 +579,6 @@ class PaymentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 def is_teacher(user):
     return user.role == 'teacher'
-
-
-# @login_required
-# @user_passes_test(is_teacher)
-# def teacher_profile(request):
-#     teacher = request.user
-#     context = {
-#         'groups': Group.objects.filter(teacher=teacher),
-#         'students_count': User.objects.filter(group__teacher=teacher, role='student').count(),
-#         # 'schedule': Group.objects.filter(teacher=teacher).values('name', 'schedule', 'course__name')
-#         'schedule': Group.objects.filter(teacher=teacher)
-#     }
-#     return render(request, 'teacher/profile.html', context)
 
 
 @login_required
@@ -616,79 +637,7 @@ def teacher_groups(request):
     groups = Group.objects.filter(teacher=teacher)
     return render(request, 'teacher/groups.html', {'groups': groups})
 
-
-# @login_required
-# @user_passes_test(is_teacher)
-# def teacher_students(request):
-#     teacher = request.user
-#     students = User.objects.filter(group__teacher=teacher, role='student')
-#     return render(request, 'teacher/students.html', {'students': students})
-
-from django.db.models import Subquery, OuterRef, Avg, Max
-
 from django.db.models import Subquery, OuterRef, Avg
-
-
-# @login_required
-# @user_passes_test(is_teacher)
-# def teacher_students(request):
-#     teacher = request.user
-#
-#     # Subquery to get the latest payment month for each student
-#     latest_payment_month = Payment.objects.filter(
-#         student=OuterRef('pk')  # Use 'student' instead of 'user'
-#     ).order_by('-month').values('month')[:1]
-#
-#     # Subquery to get the payment status for the latest payment month
-#     latest_payment_status = Payment.objects.filter(
-#         student=OuterRef('pk'),  # Use 'student' instead of 'user'
-#         month=Subquery(latest_payment_month)
-#     ).values('status')[:1]
-#
-#     students = User.objects.filter(group__teacher=teacher, role='student').annotate(
-#         group_name=Max('group__name'),
-#         course_months=Max('group__course__duration_months'),
-#         current_month=Subquery(latest_payment_month),
-#         total_payments=Sum('payment__amount'),
-#         current_month_status=Subquery(latest_payment_status),
-#         average_grade=Avg('grades__grade')
-#     )
-#
-#     return render(request, 'teacher/students.html', {'students': students})
-# from django.db.models import F, ExpressionWrapper, IntegerField
-# from django.db.models.functions import TruncMonth
-# from datetime import datetime
-#
-#
-# @login_required
-# @user_passes_test(is_teacher)
-# def teacher_students(request):
-#     teacher = request.user
-#
-#     # Current date for calculation
-#     today = datetime.today()
-#
-#     # Calculate the current course month
-#     students = User.objects.filter(group__teacher=teacher, role='student').annotate(
-#         group_name=Max('group__name'),
-#         course_months=F('group__course__duration_months'),
-#         course_start_date=F('group__start_date'),
-#         current_month=ExpressionWrapper(
-#             (today.year - F('group__start_date__year')) * 12 +
-#             (today.month - F('group__start_date__month')) + 1,
-#             output_field=IntegerField()
-#         ),
-#         total_payments=Sum('payment__amount'),
-#         current_month_status=Subquery(
-#             Payment.objects.filter(
-#                 student=OuterRef('pk'),
-#                 month=(today.year - F('group__start_date__year')) * 12 +
-#                       (today.month - F('group__start_date__month')) + 1
-#             ).values('status')[:1]
-#         ),
-#         average_grade=Avg('grades__grade')
-#     )
-#     return render(request, 'teacher/students.html', {'students': students})
 
 from datetime import datetime
 from django.db.models import Sum, F
@@ -720,6 +669,7 @@ def teacher_students(request):
                                     required_payment) else "Unpaid"
 
         student_data.append({
+            'pk':student.id,
             'username': student.username,
             'full_name': f"{student.first_name} {student.last_name}",
             'group_name': student.group.name if student.group else "Noma'lum",
@@ -785,6 +735,7 @@ def get_group_students(request, group_id):
     today = now().date()  # Bugungi sana
 
     students = group.users.filter(role='student').annotate(
+        sum=Sum('grades__grade'),
         average_grade=Avg('grades__grade'),
         full_name=Concat('first_name', Value(' '), 'last_name'),
         today_grade=Subquery(
@@ -794,7 +745,7 @@ def get_group_students(request, group_id):
             ).values('grade')[:1]
         )
     ).values(
-        'id', 'full_name', 'phone', 'image', 'average_grade', 'today_grade'
+        'id', 'full_name', 'phone', 'image', 'sum', 'average_grade', 'today_grade'
     )
 
     # Har bir studentning rasmiga to'liq URL qo'shish

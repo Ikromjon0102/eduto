@@ -19,6 +19,7 @@
                         <th>Jami to'lov</th>
                         <th>Kerakli to'lov</th>
                         <th>To'lov holati</th>
+                        <th>Harakat</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,6 +32,11 @@
                         <td>{{ student.total_payments }}</td>
                         <td>{{ student.required_payment }}</td>
                         <td>{{ student.payment_status }}</td>
+                        <td>
+                            <a href="{% url 'student_profile_for_teacher' student.pk %}" class="btn btn-sm btn-outline-primary">
+                              <i class="fas fa-eye me-1"></i> Ko'rish
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
