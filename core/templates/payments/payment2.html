@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
             padding: 0;
             background-color: #f4f4f9;
         }
+
         .container {
             width: 90%;
             margin: 20px auto;
@@ -19,10 +21,12 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             color: #333;
             text-align: center;
         }
+
         .message {
             background: #e0ffe0;
             padding: 10px;
@@ -31,23 +35,29 @@
             margin-bottom: 20px;
             border-radius: 5px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
         }
-        table th, table td {
+
+        table th,
+        table td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
         }
+
         table th {
             background: #333;
             color: #fff;
         }
+
         table tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+
         .no-data {
             text-align: center;
             color: #777;
@@ -55,48 +65,50 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Guruhdagi To'lovlar Ro'yxati</h1>
 
         <!-- To'lov yaratish xabari -->
         {% if message %}
-            <div class="message">
-                {{ message }}
-            </div>
+        <div class="message">
+            {{ message }}
+        </div>
         {% endif %}
 
         <!-- To'lovlar jadvali -->
         {% if payments %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>O'quvchi</th>
-                        <th>Oyni</th>
-                        <th>Summasi</th>
-                        <th>Holat</th>
-                        <th>Kurs</th>
-                        <th>Guruh</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for payment in payments %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ payment.student }}</td>
-                            <td>{{ payment.month }}</td>
-                            <td>{{ payment.amount }}</td>
-                            <td>{{ payment.status }}</td>
-                            <td>{{ payment.course }}</td>
-                            <td>{{ payment.group }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>O'quvchi</th>
+                    <th>Oyni</th>
+                    <th>Summasi</th>
+                    <th>Holat</th>
+                    <th>Kurs</th>
+                    <th>Guruh</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ payment.student }}</td>
+                    <td>{{ payment.month }}</td>
+                    <td>{{ payment.amount }}</td>
+                    <td>{{ payment.status }}</td>
+                    <td>{{ payment.course }}</td>
+                    <td>{{ payment.group }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% else %}
-            <p class="no-data">Hozircha to'lovlar mavjud emas.</p>
+        <p class="no-data">Hozircha to'lovlar mavjud emas.</p>
         {% endif %}
     </div>
 </body>
+
 </html>

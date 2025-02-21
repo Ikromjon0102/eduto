@@ -1,26 +1,28 @@
 import json
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
-from django.db.models.functions import Concat
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, UpdateView, DeleteView
+from django.views.generic import DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Sum, Count, Avg, Value, Subquery, OuterRef
 from datetime import date
 import openpyxl
 from django.http import HttpResponse, JsonResponse
 from reportlab.pdfgen import canvas
 from django.views import View
 from .models import *
-from .forms import UserCreateForm, CourseCreateForm, GroupCreateForm, PaymentPersonalForm, PaymentForm, GradeForm
+from .forms import (UserCreateForm, CourseCreateForm,
+                    GroupCreateForm, PaymentPersonalForm,
+                    PaymentForm, GradeForm)
 from .models import User, Group, Course
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView
 from django.utils import timezone
+from django.db.models import Subquery, OuterRef, Q
 from datetime import datetime
-from .models import Payment
+from django.db.models import Sum, F, Count
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 
 
 class CustomLoginView(LoginView):
@@ -242,92 +244,44 @@ class PaymentView(ListView):
     context_object_name = 'payments'
 
     def get_queryset(self):
-        # Barcha to'lovlarni olish
-        queryset = Payment.objects.all().order_by('student', 'month')
-        return queryset
+        return Payment.objects.all().order_by('student', 'month_period')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Joriy sana
         today = timezone.now().date()
-        # Joriy oyning 10-sanasi
-        payment_deadline = datetime(today.year, today.month, 10).date()
-
-        # To'lovlar uchun status
         payment_status = []
         for payment in context['payments']:
-            # To'lov oyining 10-sanasi
-            payment_month = datetime(payment.date.year, payment.date.month, 10).date()
-
-            # Agar to'lov 'unpaid' va joriy sana 10-sanadan o'tgan bo'lsa
-            is_overdue = payment.status == 'unpaid' and today > payment_month
-
-            payment_status.append({
-                'payment': payment,
-                'is_overdue': is_overdue
-            })
-
+            deadline = payment.month_period.end_date
+            is_overdue = payment.status == 'unpaid' and today > deadline
+            payment_status.append({'payment': payment, 'is_overdue': is_overdue})
         context['payment_status'] = payment_status
         return context
 
 
-class PaymentCreateView(View):
-    template_name = 'payment_form.html'
-
-    def get(self, request):
-        # GET so'rovi uchun - formani ko'rsatish
-        initial_data = {}
-
-        # URL dan group_id kelgan bo'lsa
-        group_id = request.GET.get('group')
-        if group_id:
-            try:
-                group = Group.objects.get(id=group_id)
-                initial_data = {
-                    'group': group,
-                    'amount': group.course.price_per_month,
-                    'course': group.course
-                }
-            except Group.DoesNotExist:
-                pass
-
-        form = PaymentForm(initial=initial_data)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request):
-        # POST so'rovi uchun - formani saqlash
-        form = PaymentForm(request.POST)
-
-        if form.is_valid():
-            try:
-                # Guruhdan kursni olish
-                payment = form.save(commit=False)
-                payment.course = payment.group.course
-                payment.status = 'paid'
-                payment.save()
-
-                messages.success(request, "To'lov muvaffaqiyatli qo'shildi!")
-                return redirect('payments')
-            except Exception as e:
-                messages.error(request, f"Xatolik yuz berdi: {str(e)}")
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-
-        return render(request, self.template_name, {'form': form})
-
-
 def load_students(request):
-    """Guruh bo'yicha o'quvchilarni yuklash uchun AJAX view"""
     group_id = request.GET.get('group')
     if group_id:
         students = User.objects.filter(group_id=group_id, role='student')
         return JsonResponse({
-            'students': [{'id': student.id, 'name': student.get_full_name() or student.username}
-                         for student in students]
+            'students': [
+                {'id': s.id, 'name': f"{s.first_name} {s.last_name}"}
+                for s in students
+            ]
         })
     return JsonResponse({'students': []})
+
+# def load_students(request):
+#     """Guruh bo'yicha o'quvchilarni yuklash uchun AJAX view"""
+#     group_id = request.GET.get('group')
+#     if group_id:
+#         students = User.objects.filter(group_id=group_id, role='student')
+#         print(group_id, students)
+#         return JsonResponse({
+#             'students': [{'id': student.id, 'name': student.get_full_name() or student.username}
+#                          for student in students]
+#         })
+#
+#     return JsonResponse({'students': []})
 
 
 def group_details(request, group_id):
@@ -353,67 +307,33 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         student = self.object
-
         if student.group:
             context['course'] = student.group.course
             context['start_date'] = student.group.start_date
             context['end_date'] = student.group.end_date
 
-            # Hozirgi o'qiyotgan oyi
-            start_date = student.group.start_date
-            today = date.today()
-            months_studied = relativedelta(today, start_date).months + 1
-            context['current_month'] = min(months_studied, student.group.course.duration_months)
-
-            # Kurs davomiyligi bo'yicha to'lovlar ro'yxati
-            duration = student.group.course.duration_months
-            payments = Payment.objects.filter(
-                student=student,
-                group=student.group
-            ).order_by('month')
-
-            # To'lovlar lug'atini yaratish
-            payments_dict = {payment.month: payment for payment in payments}
-
-            # Barcha oylar uchun to'lovlar ro'yxati
+            # To'lovlarni oylik davr bo'yicha olish
+            payments = Payment.objects.filter(student=student, group=student.group)
             all_payments = []
-            monthly_payment = student.group.course.price_per_month
-
-            for month in range(1, duration + 1):
-                if month in payments_dict:
-                    payment = payments_dict[month]
+            for month_period in MonthPeriod.objects.filter(is_active=True):
+                payment = payments.filter(month_period=month_period).first()
+                if payment:
                     all_payments.append({
-                        'month': month,
+                        'month_period': month_period,
                         'amount': payment.amount,
-                        'date': payment.date,
                         'status': payment.status,
-                        'comment': payment.comment
+                        'payment_method': payment.payment_method,
+                        'date': payment.date
                     })
                 else:
                     all_payments.append({
-                        'month': month,
-                        'amount': monthly_payment,
-                        'date': None,
+                        'month_period': month_period,
+                        'amount': student.group.course.price_per_month,
                         'status': 'unpaid',
-                        'comment': None
+                        'payment_method': None,
+                        'date': None
                     })
-
             context['all_payments'] = all_payments
-
-            # Umumiy to'langan summa
-            total_paid = payments.filter(
-                status='paid'
-            ).aggregate(total=Sum('amount'))['total'] or 0
-            context['total_paid'] = total_paid
-
-            # Baholar
-            context['grades'] = Grade.objects.filter(student=student).order_by('-date')
-
-            # O'rtacha baho
-            if context['grades'].exists():
-                avg_grade = sum(grade.grade for grade in context['grades']) / context['grades'].count()
-                context['average_grade'] = round(avg_grade, 1)
-
         return context
 
 
@@ -488,44 +408,33 @@ class StudentProfileForTeacherView(LoginRequiredMixin, DetailView):
 
         return context
 
+
 class PaymentPersonalView(LoginRequiredMixin, View):
-    def post(self, request, student_id, row):
-        # try:
-            print(f"Received POST request: student_id={student_id}, row={row}")
-            print(f"POST data: {request.POST}")
+    def post(self, request, student_id, period_id):
+        student = get_object_or_404(User, id=student_id)
+        period = get_object_or_404(MonthPeriod, id=period_id)
 
-            student = get_object_or_404(User, id=student_id)
+        if not student.group:
+            messages.error(request, "O'quvchi hech qaysi guruhga biriktirilmagan!")
+            return redirect('student_profile', pk=student_id)
 
-            if not student.group:
-                messages.error(request, "O'quvchi hech qaysi guruhga biriktirilmagan!")
-                return redirect('student_profile', pk=student_id)
-
-            form = PaymentPersonalForm(request.POST)
-
-            # print(f"saaaaaalom, Form is valid: {form.is_valid()}")
-            # if not form.is_valid():
-            #     print(f"Form errors: {form.errors}")
-
-            if form.is_valid():
-                print('shu yerda xatolik')
-                payment = form.save(commit=False)
-                payment.course = student.group.course
-                payment.student = student
-                payment.group = student.group
-                payment.month = row
-                payment.status = 'paid'
-
-                try:
-                    payment.full_clean()
-                    payment.save()
-                    messages.success(request, f"{row}-oy uchun to'lov muvaffaqiyatli amalga oshirildi!")
-                except ValidationError as e:
-                    messages.error(request, f"Validatsiya xatosi: {e}")
-                    return redirect('student_profile', pk=student_id)
-            else:
-                messages.error(request, f"Form xatosi: {form.errors}")
-
-                return redirect('student_profile', pk=student_id)
+        form = PaymentPersonalForm(request.POST)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.student = student
+            payment.group = student.group
+            payment.course = student.group.course
+            payment.month_period = period
+            payment.status = 'paid'
+            try:
+                payment.full_clean()
+                payment.save()
+                messages.success(request, f"{period.name} uchun to'lov muvaffaqiyatli amalga oshirildi!")
+            except ValidationError as e:
+                messages.error(request, f"Validatsiya xatosi: {e}")
+        else:
+            messages.error(request, f"Form xatosi: {form.errors}")
+        return redirect('student_profile', pk=student_id)
 
 
 class PaymentHistoryView(LoginRequiredMixin, DetailView):
@@ -637,12 +546,6 @@ def teacher_groups(request):
     groups = Group.objects.filter(teacher=teacher)
     return render(request, 'teacher/groups.html', {'groups': groups})
 
-from django.db.models import Subquery, OuterRef, Avg
-
-from datetime import datetime
-from django.db.models import Sum, F
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required, user_passes_test
 
 
 @login_required
@@ -650,7 +553,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 def teacher_students(request):
     teacher = request.user
     today = datetime.today()
-
     students = User.objects.filter(group__teacher=teacher, role='student').annotate(
         total_payments=Sum('payment__amount'),
         course_months=F('group__course__duration_months'),
@@ -660,26 +562,23 @@ def teacher_students(request):
 
     student_data = []
     for student in students:
-        current_month = (today.year - student.course_start_date.year) * 12 + (
-            today.month - student.course_start_date.month
-        ) + 1
-        course_months = student.course_months
-        required_payment = current_month * student.monthly_price
-        payment_status = "Paid" if (student.total_payments and student.total_payments >=
-                                    required_payment) else "Unpaid"
+        active_periods = MonthPeriod.objects.filter(
+            start_date__gte=student.group.start_date,
+            end_date__lte=student.group.end_date
+        )
+        total_paid = student.total_payments or 0
+        required_payment = sum([period.monthly_price for period in active_periods])
+        payment_status = "Paid" if total_paid >= required_payment else "Unpaid"
 
         student_data.append({
-            'pk':student.id,
+            'pk': student.id,
             'username': student.username,
             'full_name': f"{student.first_name} {student.last_name}",
-            'group_name': student.group.name if student.group else "Noma'lum",
-            'current_month': current_month,
-            'total_payments': student.total_payments or 0,
+            'group_name': student.group.name,
+            'total_payments': total_paid,
             'required_payment': required_payment,
             'payment_status': payment_status,
-            'course_months':course_months,
         })
-
     return render(request, 'teacher/students.html', {'students': student_data})
 
 
@@ -761,9 +660,6 @@ def get_group_students(request, group_id):
 
 
 
-
-
-
 @csrf_exempt
 @login_required
 @user_passes_test(is_teacher)
@@ -832,3 +728,146 @@ def add_grade(request):
         'success': False,
         'error': 'Faqat POST so\'rovlar qabul qilinadi'
     }, status=405)
+
+
+class PaymentReportView(TemplateView):
+    template_name = 'payments/report.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get('search', '')
+
+        # Tanlangan oy (GET parametri orqali)
+        selected_period_id = self.request.GET.get('period')
+        if selected_period_id:
+            selected_period = MonthPeriod.objects.get(id=selected_period_id)
+            payments = Payment.objects.filter(month_period=selected_period, status='paid')
+        else:
+            selected_period = None
+            payments = Payment.objects.filter(status='paid')
+
+        # Umumiy statistika
+        total_payments = payments.count()
+        total_amount = payments.aggregate(Sum('amount'))['amount__sum'] or 0
+
+        # To'lov turlari bo'yicha statistika
+        payment_methods_stats = payments.values('payment_method').annotate(
+            count=Count('id'),
+            total=Sum('amount')
+        )
+        if search_query:
+            payments = payments.filter(
+                Q(student__first_name__icontains=search_query) |
+                Q(student__last_name__icontains=search_query) |
+                Q(group__name__icontains=search_query)
+            )
+        context.update({
+            'periods': MonthPeriod.objects.all(),
+            'selected_period': selected_period,
+            'payments': payments.select_related('student', 'group'),
+            'total_payments': total_payments,
+            'total_amount': total_amount,
+            'payment_methods_stats': payment_methods_stats,
+        })
+        return context
+
+
+class PaymentSearchView(ListView):
+    model = Payment
+    template_name = 'payments/_payments_table.html'
+    context_object_name = 'payments'
+
+    def get_queryset(self):
+        queryset = Payment.objects.filter(status='paid')  # Faqat to'langanlarni olish
+        search = self.request.GET.get('q', '')
+        if search:
+            queryset = queryset.filter(
+                Q(student__first_name__icontains=search) |
+                Q(student__last_name__icontains=search) |
+                Q(group__name__icontains=search) |
+                Q(amount__icontains=search)  # Summa bo'yicha qidirish
+            )
+        return queryset
+
+class PaymentCreateView(View):
+    template_name = 'payments/payment_form.html'
+
+    def get(self, request):
+        initial_data = {}
+        group_id = request.GET.get('group')
+        if group_id:
+            try:
+                group = Group.objects.get(id=group_id)
+                initial_data = {
+                    'group': group,
+                    'amount': group.course.price_per_month,
+                    'course': group.course,
+
+                }
+            except Group.DoesNotExist:
+                pass
+
+        form = PaymentForm(initial=initial_data)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            try:
+                payment = form.save(commit=False)
+                payment.course = payment.group.course
+                payment.status = 'paid'
+                payment.save()
+                messages.success(request, "To'lov muvaffaqiyatli qo'shildi!")
+                return HttpResponse("""
+                <div class="alert alert-success">
+                    To'lov muvaffaqiyatli qo'shildi!
+                </div>
+            """)
+            except Exception as e:
+                messages.error(request, f"Xatolik yuz berdi: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+        return render(request, self.template_name, {'form': form})
+
+
+# class PaymentCreateView(View):
+#     template_name = 'payments/payment_form.html'
+#
+#     def get(self, request):
+#         form = PaymentForm()
+#         return render(request, self.template_name, {'form': form})
+#
+#     def post(self, request):
+#         form = PaymentForm(request.POST)
+#         if form.is_valid():
+#             payment = form.save()
+#             messages.success(request, "To'lov muvaffaqiyatli qo'shildi!")
+#             return HttpResponse("<div class='alert alert-success'>To'lov muvaffaqiyatli qo'shildi!</div>")
+#
+#         return render(request, self.template_name, {'form': form})
+
+# class PaymentCreateView(View):
+#     template_name = 'payments/payment_form.html'
+#
+#     def get(self, request):
+#         form = PaymentForm()
+#         return render(request, self.template_name, {'form': form})
+#
+#     def post(self, request):
+#         form = PaymentForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return HttpResponse("""
+#                 <div class="alert alert-success">
+#                     To'lov muvaffaqiyatli qo'shildi!
+#                 </div>
+#                 <script>
+#                     window.setTimeout(() => {
+#                         window.location.reload();
+#                     }, 1500);
+#                 </script>
+#             """)
+#         return render(request, self.template_name, {'form': form})

@@ -119,8 +119,8 @@
             <a href="{% url 'import_excel' %}" class="btn btn-custom">
                 <i class="fas fa-file-import me-2"></i>Excel Import
             </a>
-            <a href="{% url 'payment_add' %}" class="btn btn-custom">
-                <i class="fas fa-money-bill-wave me-2"></i>To'lov
+            <a href="{% url 'payment_report' %}" class="btn btn-custom">
+                <i class="fas fa-money-bill-wave me-2"></i>To'lovlar
             </a>
             <form action="{% url 'logout' %}" method="post"> {% csrf_token %}
                 <button type="submit" class="btn btn-custom">

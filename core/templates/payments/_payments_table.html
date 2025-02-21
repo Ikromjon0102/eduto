@@ -1,0 +1,28 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>O'quvchi</th>
+            <th>Guruh</th>
+            <th>Summa</th>
+            <th>To'lov turi</th>
+            <th>Sana</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in payments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ payment.student.full_name }}</td>
+            <td>{{ payment.group.name }}</td>
+            <td>{{ payment.amount|floatformat:0 }} so'm</td>
+            <td>{{ payment.get_payment_method_display }}</td>
+            <td>{{ payment.date|date:"d.m.Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">To'lovlar topilmadi</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

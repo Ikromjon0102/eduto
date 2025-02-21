@@ -1,0 +1,200 @@
+<!--report.html-->
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Yangi to'lov modal oynasi -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="paymentModalLabel">Yangi To'lov Qo'shish</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Forma AJAX orqali yuklanadi -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtr va qidiruv qismi -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <!-- Oylik davr filtri -->
+                <div class="col-md-4">
+                    <form method="get">
+                        <select name="period" class="form-select" onchange="this.form.submit()">
+                            <option value="">Barcha oylar</option>
+                            {% for period in periods %}
+                            <option value="{{ period.id }}" {% if selected_period.id == period.id %}selected{% endif %}>
+                                {{ period.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+
+                <!-- Qidiruv maydoni -->
+                <div class="col-md-5">
+                    <input type="text" class="form-control" id="searchInput" name="q"
+                        placeholder="O'quvchi, guruh yoki summa bo'yicha izlash..." hx-get="{% url 'payment_search' %}"
+                        hx-trigger="keyup changed delay:500ms" hx-target="#payments-table" hx-swap="innerHTML"
+                        hx-indicator="#search-indicator">
+                </div>
+
+                <!-- Yangi to'lov tugmasi -->
+                <div class="col-md-3 text-end">
+                    <a href="{% url 'payment_add' %}" class="btn btn-success" >
+<!--                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentModal"-->
+<!--                        hx-get="{% url 'payment_add' %}" hx-target=".modal-body" hx-swap="innerHTML">-->
+                        <!-- hx-swap qo'shildi -->
+                        <i class="fas fa-plus-circle me-1"></i> Yangi To'lov</a>
+<!--                    </button>-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asosiy statistika -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Jami To'lovlar</h5>
+                    <h2 class="card-text">{{ total_payments }} ta</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Jami Summa</h5>
+                    <h2 class="card-text">{{ total_amount|floatformat:0 }} so'm</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- To'lov turlari bo'yicha statistika -->
+    <div class="row mb-4">
+        {% for stat in payment_methods_stats %}
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-capitalize">
+                                {% if stat.payment_method == 'cash' %}
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                {% elif stat.payment_method == 'bank_transfer' %}
+                                <i class="fas fa-university me-2"></i>
+                                {% elif stat.payment_method == 'card' %}
+                                <i class="fas fa-credit-card me-2"></i>
+                                {% else %}
+                                <i class="fas fa-wallet me-2"></i>
+                                {% endif %}
+                                {{ stat.payment_method }}
+                            </h5>
+                            <p class="mb-0">
+                                {{ stat.count }} ta - {{ stat.total|floatformat:0 }} so'm
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- To'lovlar jadvali -->
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">To'lovlar Tafsilotlari</h4>
+        </div>
+        <div class="card-body p-0">
+            <div id="payments-table">
+                {% include 'payments/_payments_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+<!--report.html-->
+{% block extra_js %}
+<script src="https://unpkg.com/htmx.org@1.9.4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // HTMX konfiguratsiyasi
+    htmx.config.useTemplateFragments = true;
+
+<!--    // Modal yopilganda yangilash-->
+<!--    document.getElementById('paymentModal').addEventListener('hidden.bs.modal', function () {-->
+<!--        htmx.ajax('GET', '{% url "payment_report" %}', '#payments-table');-->
+<!--    });-->
+
+    // Forma yuklanganda studentlarni yuklash
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'id_student') {
+            return;
+        }
+
+        // Guruh tanlovi uchun event listener
+        const groupSelect = document.getElementById('id_group');
+        if (groupSelect) {
+            groupSelect.addEventListener('change', function() {
+                const groupId = this.value;
+                htmx.ajax('GET', `/load-students/?group=${groupId}`, '#id_student');
+            });
+        }
+
+        // To'lov usuli tanlovi
+        const methodCards = document.querySelectorAll('.method-card');
+        const paymentMethodInput = document.querySelector('#id_payment_method');
+        if (methodCards.length > 0) {
+            methodCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const methodValue = this.dataset.method;
+                    paymentMethodInput.value = methodValue;
+                    methodCards.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+    });
+
+    // CSRF token sozlamasi
+    htmx.on("htmx:configRequest", (evt) => {
+        evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    });
+});
+</script>
+
+
+<style>
+    .card {
+        border-radius: 15px;
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    #searchInput {
+        border-radius: 25px;
+        padding: 12px 20px;
+    }
+
+    .form-select {
+        border-radius: 25px;
+        padding: 12px 20px;
+    }
+</style>
+{% endblock %}

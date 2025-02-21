@@ -6,7 +6,7 @@ from .views import (Profile, generate_excel_report, generate_pdf_report,
                     group_details, StudentProfileView, PaymentPersonalView, PaymentHistoryView, PaymentUpdateView,
                     PaymentDeleteView, add_grade, teacher_students, teacher_groups, teacher_profile, get_group_students,
                     CustomLoginView, add_grade_profile, unpaid_students, StudentProfileForTeacherView,
-                    download_template_with_data)
+                    download_template_with_data, PaymentReportView, PaymentSearchView)
 
 
 
@@ -16,6 +16,11 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 
     path('manager/', Profile.as_view(), name='manager_page'),
+
+    path('payments/report/', PaymentReportView.as_view(), name='payment_report'),
+    path('payments/add/', PaymentCreateView.as_view(), name='payment_add'),
+    path('payments/search/', PaymentSearchView.as_view(), name='payment_search'),
+
 
     path('teacher/profile/', teacher_profile, name='teacher_profile'),
     path('teacher/groups/', teacher_groups, name='teacher_groups'),
@@ -27,6 +32,7 @@ urlpatterns = [
 
     path('student/<int:student_id>/<int:row>', PaymentPersonalView.as_view(), name = 'per_payment'),
 
+
     path('payment/history/<int:pk>/', PaymentHistoryView.as_view(), name='payment_history'),
     path('payment/update/<int:pk>/', PaymentUpdateView.as_view(), name='payment_update'),
     path('payment/delete/<int:pk>/', PaymentDeleteView.as_view(), name='payment_delete'),
@@ -34,7 +40,7 @@ urlpatterns = [
     path('student/<int:pk>/', StudentProfileView.as_view(), name='student_profile'),
     path('teacher-student/<int:pk>/', StudentProfileForTeacherView.as_view(), name='student_profile_for_teacher'),
 
-    path('payments/add/', PaymentCreateView.as_view(), name='payment_add'),
+
     path('load-students/', load_students, name='load_students'),
     path('api/groups/<int:group_id>/', group_details, name='group_details'),
 

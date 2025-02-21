@@ -1,0 +1,207 @@
+{% extends 'teacher_base.html' %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-body">
+        <!-- Student Profile Header -->
+        <div class="row mb-4">
+            <div class="col-md-3 text-center">
+                {% if student.image %}
+                <img src="{{ student.image.url }}" alt="{{ student.username }}"
+                    class="rounded-circle img-thumbnail mb-3" style="width: 200px; height: 200px; object-fit: cover;">
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h1 class="display-6 mb-3">{{ student.get_full_name }}</h1>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-telephone-fill me-2"></i>
+                                {{ student.phone|default:"Kiritilmagan" }}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-person-fill me-2"></i>
+                                {{ student.username }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if student.group %}
+        <!-- Study Information -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-book-fill me-2"></i>O'quv ma'lumotlari
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted mb-2">Guruh</h6>
+                                    <p class="h5">{{ student.group.name }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted mb-2">Kurs</h6>
+                                    <p class="h5">{{ course.name }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3">
+                                    <h6 class="text-muted mb-2">Hozirgi oyi</h6>
+                                    <p class="h5">{{ current_month }}-oy</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <!-- Payment Overview -->
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-cash me-2"></i>To'lovlar holati
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for payment in all_payments %}
+                            <button type="button"
+                                class="btn {% if payment.status == 'paid' %}btn-success{% else %}btn-danger{% endif %} btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#paymentModal"
+                                data-month="{{ payment.month }}"
+                                data-amount="{{ payment.amount }}"
+                                {% if payment.status == 'paid' %}disabled{% endif %}>
+                                {{ payment.month }}-oy
+                                {% if payment.status == 'paid' %}
+                                <i class="bi bi-check-circle-fill"></i>
+                                {% else %}
+                                <i class="bi bi-x-circle-fill"></i>
+                                {% endif %}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grades Section -->
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-star-fill me-2"></i>Baholar
+                </h5>
+                {% if grades %}
+                <div class="bg-white text-info px-3 py-1 rounded-pill">
+                    <strong>O'rtacha: {{ average_grade }}</strong>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if grades %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sana</th>
+                                <th>O'qituvchi</th>
+                                <th>Baho</th>
+                                <th>Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in grades %}
+                            <tr class="{% if grade.grade >= 4 %}table-success{% elif grade.grade == 3 %}table-warning{% else %}table-danger{% endif %}">
+                                <td>{{ grade.date|date:"d.m.Y" }}</td>
+                                <td>{{ grade.teacher.get_full_name }}</td>
+                                <td>
+                                    <span class="badge rounded-pill {% if grade.grade >= 4 %}bg-success{% elif grade.grade == 3 %}bg-warning{% else %}bg-danger{% endif %} px-3">
+                                        {{ grade.grade }}
+                                    </span>
+                                </td>
+                                <td>{{ grade.comment|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    Hali baholar qo'yilmagan
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+            O'quvchi hech qaysi guruhga biriktirilmagan
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">To'lov qilish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'per_payment' student.id 0 %}" method="post" id="paymentForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">To'lov summasi</label>
+                        <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Izoh</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" name="month" id="payment_month">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary">To'lash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentModal = document.getElementById('paymentModal');
+        const paymentForm = document.getElementById('paymentForm');
+
+        paymentModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const month = button.getAttribute('data-month');
+            const amount = button.getAttribute('data-amount');
+
+            paymentForm.action = "{% url 'per_payment' student.id 0 %}".replace('0', month);
+            document.getElementById('payment_month').value = month;
+            document.getElementById('amount').value = amount;
+
+            paymentForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                this.submit();
+            });
+        });
+    });
+</script>
+{% endblock %}
