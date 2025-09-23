@@ -14,7 +14,7 @@ from django.views import View
 from .models import *
 from .forms import (UserCreateForm, CourseCreateForm,
                     GroupCreateForm, PaymentPersonalForm,
-                    PaymentForm, GradeForm)
+                    PaymentForm, GradeForm, ApplicantCreateForm)
 from .models import User, Group, Course
 from django.views.generic import ListView
 from django.utils import timezone
@@ -37,14 +37,62 @@ class CustomLoginView(LoginView):
         return reverse_lazy('manager_page')
 
 
-class Profile(View):
+# class Profile(View):
+#
+#     def get(self, request):
+#         form1 = UserCreateForm()
+#         form2 = CourseCreateForm()
+#         form3 = GroupCreateForm()
+#         students = User.objects.filter(role = 'student')
+#         teachers = User.objects.filter(role = 'teacher')
+#         courses = Course.objects.all()
+#         groups = Group.objects.all()
+#
+#         context = {
+#             'courses': courses,
+#             'groups': groups,
+#             'form_student': form1,
+#             'form_course': form2,
+#             'form_group': form3,
+#             'teachers':teachers,
+#             'students': students
+#         }
+#         return render(request, 'admin.html', context )
+#
+#
+#     def post(self, request):
+#         create_form = UserCreateForm(data=request.POST)
+#         create_course_form = CourseCreateForm(data=request.POST)
+#         create_group_form = GroupCreateForm(data=request.POST)
+#         if create_form.is_valid():
+#             create_form.save()
+#             return redirect('manager_page')
+#
+#         elif create_course_form.is_valid():
+#             create_course_form.save()
+#             return redirect('manager_page')
+#
+#         elif create_group_form.is_valid():
+#             create_group_form.save()
+#             return redirect('manager_page')
+#         else:
+#             context = {
+#                 'form_student': create_form,
+#                 'form_course': create_course_form,
+#                 'form_group': create_group_form,
+#             }
+#             return render(request, 'admin.html', context)
 
+class Profile(View):
     def get(self, request):
-        form1 = UserCreateForm()
+        form1 = ApplicantCreateForm()
         form2 = CourseCreateForm()
         form3 = GroupCreateForm()
-        students = User.objects.filter(role = 'student')
-        teachers = User.objects.filter(role = 'teacher')
+        form4 = UserCreateForm()
+        students = User.objects.filter(Q(role='student') & Q(group__isnull=False))
+        applicants = User.objects.filter(role='applicant')# Applicantlar
+        # applicants = User.objects.filter(Q(role='applicant') | Q(role='student',  group=None)) # Applicantlar
+        teachers = User.objects.filter(role='teacher')
         courses = Course.objects.all()
         groups = Group.objects.all()
 
@@ -54,17 +102,24 @@ class Profile(View):
             'form_student': form1,
             'form_course': form2,
             'form_group': form3,
-            'teachers':teachers,
-            'students': students
+            'form_teacher': form4,
+            'teachers': teachers,
+            'students': students,
+            'applicants': applicants,
         }
-        return render(request, 'admin.html', context )
-
+        return render(request, 'admin.html', context)
 
     def post(self, request):
         create_form = UserCreateForm(data=request.POST)
         create_course_form = CourseCreateForm(data=request.POST)
         create_group_form = GroupCreateForm(data=request.POST)
-        if create_form.is_valid():
+        applicant_form = ApplicantCreateForm(data=request.POST)  # Yangi qo‘shildi
+
+        if applicant_form.is_valid():
+            applicant_form.save()
+            return redirect('manager_page')
+
+        elif create_form.is_valid():
             create_form.save()
             return redirect('manager_page')
 
@@ -75,15 +130,15 @@ class Profile(View):
         elif create_group_form.is_valid():
             create_group_form.save()
             return redirect('manager_page')
+
         else:
             context = {
-                'form_student': create_form,
+                'form_student': applicant_form,  # O'zgartirildi
                 'form_course': create_course_form,
                 'form_group': create_group_form,
+                'form_teacher': create_form,  # O'zgartirildi
             }
             return render(request, 'admin.html', context)
-
-
 
 
 class UstozPorfileView(View):
@@ -93,13 +148,16 @@ class UstozPorfileView(View):
 
         # Har bir guruhda o'quvchilarni filtrlash (faqat studentlar)
         groups_with_students = []
+        alll = 0
         for group in groups:
             students = group.users.filter(role='student')
-            groups_with_students.append({'group': group, 'students': students})
+            alll += len(students)
+            groups_with_students.append({'group': group, 'students': students, 'count':len(students)})
 
         context = {
             'teacher': ustoz,
-            'groups_with_students': groups_with_students
+            'groups_with_students': groups_with_students,
+            'total_students': alll
         }
         return render(request, 'teacher_page.html', context)
 
@@ -312,14 +370,47 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
             context['start_date'] = student.group.start_date
             context['end_date'] = student.group.end_date
 
+            start_date = student.group.start_date
+            today = date.today()
+            months_studied = relativedelta(today, start_date).months + 1
+            context['current_month'] = min(months_studied, student.group.course.duration_months)
+
             # To'lovlarni oylik davr bo'yicha olish
             payments = Payment.objects.filter(student=student, group=student.group)
             all_payments = []
+            # for month_period in MonthPeriod.objects.filter(is_active=True):
+            #     payment = payments.filter(month_period=month_period).first()
+            #     if payment:
+            #         all_payments.append({
+            #             'month_period': month_period,
+            #             'amount': payment.amount,
+            #             'status': payment.status,
+            #             'payment_method': payment.payment_method,
+            #             'date': payment.date
+            #         })
+            #     else:
+            #         all_payments.append({
+            #             'month_period': month_period,
+            #             'amount': student.group.course.price_per_month,
+            #             'status': 'unpaid',
+            #             'payment_method': None,
+            #             'date': None
+            #         })
+            duration = student.group.course.duration_months
+            # payments = Payment.objects.filter(
+            #     student=student,
+            #     group=student.group
+            # ).order_by('month_period')
+
+            payments_dict = {payment.month_period: payment for payment in payments}
+            all_payments = []
+            monthly_payment = student.group.course.price_per_month
+
             for month_period in MonthPeriod.objects.filter(is_active=True):
-                payment = payments.filter(month_period=month_period).first()
-                if payment:
+                if month_period in payments_dict:
+                    payment = payments_dict[month_period]
                     all_payments.append({
-                        'month_period': month_period,
+                        'month': month_period,
                         'amount': payment.amount,
                         'status': payment.status,
                         'payment_method': payment.payment_method,
@@ -327,7 +418,7 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
                     })
                 else:
                     all_payments.append({
-                        'month_period': month_period,
+                        'month': month_period,
                         'amount': student.group.course.price_per_month,
                         'status': 'unpaid',
                         'payment_method': None,
@@ -362,20 +453,20 @@ class StudentProfileForTeacherView(LoginRequiredMixin, DetailView):
             payments = Payment.objects.filter(
                 student=student,
                 group=student.group
-            ).order_by('month')
+            )
 
             # To'lovlar lug'atini yaratish
-            payments_dict = {payment.month: payment for payment in payments}
+            payments_dict = {payment.month_period: payment for payment in payments}
 
             # Barcha oylar uchun to'lovlar ro'yxati
             all_payments = []
             monthly_payment = student.group.course.price_per_month
 
-            for month in range(1, duration + 1):
-                if month in payments_dict:
-                    payment = payments_dict[month]
+            for month_period in range(1, duration + 1):
+                if month_period in payments_dict:
+                    payment = payments_dict[month_period]
                     all_payments.append({
-                        'month': month,
+                        'month': month_period,
                         'amount': payment.amount,
                         'date': payment.date,
                         'status': payment.status,
@@ -383,7 +474,7 @@ class StudentProfileForTeacherView(LoginRequiredMixin, DetailView):
                     })
                 else:
                     all_payments.append({
-                        'month': month,
+                        'month': month_period,
                         'amount': monthly_payment,
                         'date': None,
                         'status': 'unpaid',
@@ -557,7 +648,7 @@ def teacher_students(request):
         total_payments=Sum('payment__amount'),
         course_months=F('group__course__duration_months'),
         course_start_date=F('group__start_date'),
-        monthly_price=F('group__course__price_per_month')
+        # monthly_price=F('group__course__price_per_month')
     )
 
     student_data = []
@@ -567,7 +658,7 @@ def teacher_students(request):
             end_date__lte=student.group.end_date
         )
         total_paid = student.total_payments or 0
-        required_payment = sum([period.monthly_price for period in active_periods])
+        required_payment = sum([330000 for period in active_periods])
         payment_status = "Paid" if total_paid >= required_payment else "Unpaid"
 
         student_data.append({

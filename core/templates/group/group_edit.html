@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- <div class="col-md-9 p-4"> -->
+<div class="card shadow">
+    <div class="card-body">
+        <!-- Student asosiy ma'lumotlari -->
+        <div class="row mb-4">
+            <div class="col-md-3 text-center">
+                {% if student.image %}
+                <img src="{{ student.image.url }}" alt="{{ student.username }}"
+                    class="rounded-circle img-thumbnail mb-3" style="width: 200px; height: 200px; object-fit: cover;">
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h1 class="display-6 mb-3">{{ group.name }}</h1>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-telephone-fill me-2"></i>
+                                {{ student.phone|default:"Kiritilmagan" }}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-person-fill me-2"></i>
+                                {{ student.username }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ group_form }}
+            <button type="submit"> Save </button>
+        </form>
+
+        <!-- Guruh va kurs ma'lumotlari -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-book-fill me-2"></i>O'quv ma'lumotlari
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-muted mb-2">Guruh</h6>
+                            <p class="h5">{{ group.name }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-muted mb-2">Kurs</h6>
+                            <p class="h5">{{ group.course.name }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <h6 class="text-muted mb-2">Hozirgi oyi</h6>
+                            <p class="h5">{{ current_month }}-oy</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h6 class="text-muted mb-2">Boshlanish sanasi</h6>
+                            <p class="h5">{{ group.start_date|date:"d.m.Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h6 class="text-muted mb-2">Tugash sanasi</h6>
+                            <p class="h5">{{ group.end_date|date:"d.m.Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- To'lovlar tarixi -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-cash me-2"></i>O'quvchilar
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Oy</th>
+                                <th>Summa</th>
+                                <th>To'lov sanasi</th>
+                                <th>Status</th>
+                                <th>Izoh</th>
+                                <th>Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in students %}
+                            <tr>
+                                <td>{{ payment.full_name }}-oy</td>
+                                <td>{{ payment.amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if payment.date %}
+                                    {{ payment.date|date:"d.m.Y" }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.status == 'paid' %}
+                                    <span class="badge bg-success">To'langan</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">To'lanmagan</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.comment %}
+                                    {{ payment.comment }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.status != 'paid' %}
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#paymentModal" data-month="{{ payment.month }}"
+                                        data-amount="{{ payment.amount }}">
+                                        To'lov qilish
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="fw-bold">Jami to'langan:</td>
+                                <td colspan="3" class="fw-bold">{{ total_paid|floatformat:2 }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+{% endblock %}

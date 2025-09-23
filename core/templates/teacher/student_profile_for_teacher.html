@@ -79,9 +79,9 @@
                                 class="btn {% if payment.status == 'paid' %}btn-success{% else %}btn-danger{% endif %} btn-sm"
                                 data-bs-toggle="modal"
                                 data-bs-target="#paymentModal"
-                                data-month="{{ payment.month }}"
+                                data-month="{{ payment.month_period }}"
                                 data-amount="{{ payment.amount }}"
-                                {% if payment.status == 'paid' %}disabled{% endif %}>
+                                {% if payment.status == 'paid' %}disabled{% endif %} >
                                 {{ payment.month }}-oy
                                 {% if payment.status == 'paid' %}
                                 <i class="bi bi-check-circle-fill"></i>

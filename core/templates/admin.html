@@ -92,6 +92,11 @@
             <i class="fas fa-user-graduate me-2"></i>Studentlar
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-4" data-bs-toggle="tab" data-bs-target="#applicants" type="button">
+            <i class="fas fa-user-graduate me-2"></i>Applicants
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content">
@@ -192,6 +197,7 @@
                   <th>Studentlar</th>
                   <th>Jadval</th>
                   <th>Sana</th>
+                  <th>Xarakat</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,6 +230,10 @@
                       <i class="fas fa-calendar-alt me-1"></i>
                       {{ group.start_date|date:"d/m/Y" }} - {{ group.end_date|date:"d/m/Y" }}
                     </small>
+                  </td>
+                  <td>
+                    <a href=" {% url 'group_edit' group.id %} "><i class="fa-solid fa-pencil" style="color: #0000ff;"></i></a>
+<!--                    <i class="fa-solid fa-trash" style="color: #ff0000;"></i>-->
                   </td>
                 </tr>
                 {% endfor %}
@@ -282,6 +292,66 @@
             </table>
           </div>
         </div>
+
+        <div class="tab-pane fade" id="applicants">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>Applicant</th>
+                  <th>Qiziqish</th>
+                  <th>Qaysi payt</th>
+                  <th>Shaxsiy</th>
+                  <th>Ota-ona</th>
+                  <th>Harakat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for applicant in applicants %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div
+                        class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-2"
+                        style="width: 40px; height: 40px;">
+                        <i class="fas fa-user-graduate text-warning"></i>
+                      </div>
+                      <div>
+                        <h6 class="mb-0">{{ applicant.first_name }} {{ applicant.last_name }}</h6>
+                        <small class="text-muted">{{ applicant.applicant_info.study_field }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ applicant.applicant_info.study_field }}</span>
+                  </td>
+                  <td>{{ applicant.applicant_info.preferred_time }}</td>
+                  <td>
+                    <a href="tel:{{ student.phone }}" class="btn btn-sm btn-outline-success">
+                      <i class="fas fa-phone me-1"></i>{{ applicant.applicant_info.phone_own }}
+                    </a>
+                  </td>
+                  <td>
+                    <a href="tel:{{ student.phone }}" class="btn btn-sm btn-outline-success">
+                      <i class="fas fa-phone me-1"></i>{{ applicant.applicant_info.phone_parents }}
+                    </a>
+                  </td>
+                  <td>
+                    <a href="{% url 'student_profile' applicant.pk %}" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-eye me-1"></i> Ko'rish
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
       </div>
     </div>
   </div>

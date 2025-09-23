@@ -1,10 +1,19 @@
-
+from django.db.models import Q
 from django.forms import ModelForm
 from django.urls import reverse_lazy
 
-from .models import User, Course, Group, Payment, User
+
+from .models import User, Course, Group, Payment, User, Applicant
 from django import forms
 from .models import Grade
+
+
+class GroupEditForm(ModelForm):
+    class Meta:
+        model = Group
+        fields = ('name', 'course', 'teacher', 'schedule', 'room')
+
+
 
 class UserCreateForm(ModelForm):
     class Meta:
@@ -27,18 +36,46 @@ class CourseCreateForm(ModelForm):
         course = super().save(commit)
         course.save()
 
+
+from django import forms
+from django.forms import ModelForm
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit
+from core.models import Group, User
+
 class GroupCreateForm(ModelForm):
-    class Meta:
-        model = Group
-        fields = '__all__'
+    students = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(Q(role='applicant') | Q(role='student',  group=None)),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Applicantlarni tanlang"
+    )
 
     start_date = forms.DateField(
         widget=forms.DateInput(attrs={'placeholder': 'dd-mm-yyyy'}),
         input_formats=['%d-%m-%Y']
     )
 
-    def save(self, commit = True):
-        return super().save(commit)
+    class Meta:
+        model = Group
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.add_input(Submit("submit", "Saqlash", css_class="btn btn-primary"))
+
+    def save(self, commit=True):
+        group = super().save(commit=False)
+        if commit:
+            group.save()
+            applicants = self.cleaned_data.get('students')
+            for student in applicants:
+                student.role = 'student'
+                student.group = group
+                student.save()
+        return group
 
 class PaymentForm(forms.ModelForm):
     class Meta:
@@ -125,3 +162,48 @@ class GradeForm(forms.ModelForm):
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 3}),
         }
+
+
+from django import forms
+from .models import User, Applicant
+from .validators import validate_phone_number
+
+class ApplicantCreateForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+    birth_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))  # Date picker
+    phone_own = forms.CharField(
+        max_length=15,
+        validators=[validate_phone_number],
+        help_text="Masalan: +998901234567"
+    )
+    phone_parents = forms.CharField(
+        max_length=15,
+        validators=[validate_phone_number],
+        help_text="Masalan: +998901234567"
+    )
+
+    class Meta:
+        model = Applicant
+        fields = ['first_name', 'last_name', 'birth_date', 'phone_own', 'phone_parents', 'study_field', 'preferred_time']
+
+    def save(self, commit=True):
+        username = f"{self.cleaned_data['last_name']}{self.cleaned_data['first_name']}".lower()
+        password = f"{username}2025"
+
+        # Foydalanuvchi yaratish
+        user = User.objects.create(
+            username=username,  # Required field
+            first_name=self.cleaned_data['first_name'],
+            last_name=self.cleaned_data['last_name'],
+            role='applicant',
+        )
+        user.set_password(password)  # Parol o‘rnatish
+        user.save()
+
+        # Applicant obyektini yaratish
+        applicant = super().save(commit=False)
+        applicant.user = user
+        if commit:
+            applicant.save()
+        return applicant

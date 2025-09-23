@@ -8,9 +8,9 @@ django.setup()
 # Endi Django modellaridan foydalanishingiz mumkin
 from core.models import User
 
-users_without_password = User.objects.filter(password='')
+users_without_password = User.objects.filter(password='0102')
 for user in users_without_password:
-    user.set_password('manager123')
+    user.set_password('0102')
     user.save()
 
 print(f"{users_without_password.count()} ta foydalanuvchiga parol muvaffaqiyatli o'rnatildi!")
