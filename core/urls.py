@@ -1,5 +1,8 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
+
+from .apl_views import applicant_list, GroupEditView
+
 from .views import (Profile, generate_excel_report, generate_pdf_report,
                     import_from_excel, excel_page, UstozPorfileView,
                     PaymentView, PaymentCreateView, load_students,
@@ -32,6 +35,7 @@ urlpatterns = [
 
     path('student/<int:student_id>/<int:row>', PaymentPersonalView.as_view(), name = 'per_payment'),
 
+    path('applicants/', applicant_list, name='applicant_list'),
 
     path('payment/history/<int:pk>/', PaymentHistoryView.as_view(), name='payment_history'),
     path('payment/update/<int:pk>/', PaymentUpdateView.as_view(), name='payment_update'),
@@ -40,6 +44,7 @@ urlpatterns = [
     path('student/<int:pk>/', StudentProfileView.as_view(), name='student_profile'),
     path('teacher-student/<int:pk>/', StudentProfileForTeacherView.as_view(), name='student_profile_for_teacher'),
 
+    path('gruop-edit/<int:group_id>/', GroupEditView.as_view(), name = 'group_edit'),
 
     path('load-students/', load_students, name='load_students'),
     path('api/groups/<int:group_id>/', group_details, name='group_details'),

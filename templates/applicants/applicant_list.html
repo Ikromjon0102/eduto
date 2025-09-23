@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Applicantlar Ro‘yxati</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Ism Familiya</th>
+            <th>Telefon</th>
+            <th>Rasm</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for applicant in applicants %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ applicant.full_name }}</td>
+            <td>{{ applicant.phone }}</td>
+            <td><img src="{{ applicant.image.url }}" width="50" height="50"></td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">Hozircha applicantlar yo‘q</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

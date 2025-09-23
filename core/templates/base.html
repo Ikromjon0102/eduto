@@ -99,6 +99,9 @@
             <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addStudentModal">
                 <i class="fas fa-user-plus me-2"></i>O'quvchi
             </button>
+            <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addTeacherModal">
+                <i class="fas fa-user-plus me-2"></i>O'qituvchi
+            </button>
             <button class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#addGroupModal">
                 <i class="fas fa-users me-2"></i>Guruh
             </button>
@@ -107,7 +110,7 @@
             </button>
         </div>
 
-        <div class="divider"></div>
+<!--        <div class="divider"></div>-->
 
         <div class="mt-4">
             <a href="{% url 'pdf_report' %}" class="btn btn-custom">
@@ -140,7 +143,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addStudentModalLabel">O'quvchi qo'shish</h5>
+                    <h5 class="modal-title" id="addStudentModalLabel">Applicant qo'shish</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -161,17 +164,18 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="addTeacherModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>
+                    <h5 class="modal-title" id="addTeacherModalLabel">Uztoz qo'shish</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{% url 'manager_page' %}" method="post">
                         {% csrf_token %}
-                        {{ form_group|crispy }}
+                        {{ form_teacher|crispy }}
                         <div class="modal-footer">
                             <button type="reset" class="btn btn-warning">
                                 Tozalash
@@ -185,6 +189,32 @@
             </div>
         </div>
     </div>
+
+
+
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'manager_page' %}" method="post">
+                    {% csrf_token %}
+
+                    {{ form_group|crispy }}
+
+                    <div class="modal-footer">
+                        <button type="reset" class="btn btn-outline-warning">Tozalash</button>
+                        <button type="submit" class="btn btn-success">Saqlash</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
         <div class="modal-dialog">
