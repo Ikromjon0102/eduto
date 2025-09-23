@@ -2,50 +2,60 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<!-- <div class="col-md-9 p-4"> -->
-<!-- Teacher Header Section -->
-<div class="content-section mb-4">
-  <div class="d-flex align-items-center mb-3">
-    <div class="teacher-avatar me-4">
-      <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-        style="width: 60px; height: 60px; font-size: 24px;">
+<div class="dashboard-container">
+  <!-- Teacher Profile Card -->
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar">
         {{ teacher.first_name|first }}{{ teacher.last_name|first }}
       </div>
-    </div>
-    <div>
-      <h1 class="mb-0">{{ teacher.first_name }} {{ teacher.last_name }}</h1>
-      <p class="text-muted mb-0">Teacher Dashboard</p>
+      <div class="profile-info">
+        <h1>{{ teacher.first_name }} {{ teacher.last_name }}</h1>
+        <div class="profile-stats">
+          <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <span>{{ groups_with_students|length }} Guruhlar</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-user-graduate"></i>
+            <span>{{ total_students }} O'quvchilar</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Groups Section -->
-<div class="row">
-  <div class="col-12">
+  <!-- Groups Grid -->
+  <div class="groups-container">
     {% for item in groups_with_students %}
-    <div class="content-section mb-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h3 class="mb-0">{{ item.group.name }}</h3>
-          <span class="badge bg-primary">{{ item.group.student_count }} students</span>
+    <div class="group-card">
+      <div class="group-header" data-bs-toggle="collapse" data-bs-target="#group{{ forloop.counter }}">
+        <div class="group-info">
+          <div class="group-title">
+            <h3>{{ item.group.name }}</h3>
+            <span class="group-badge">{{ item.group.student_count }} o'quvchi</span>
+          </div>
+          <div class="group-meta">
+            <span><i class="fas fa-book"></i> {{ item.group.course.name }}</span>
+            <span><i class="far fa-clock"></i> {{ item.group.schedule }}</span>
+          </div>
         </div>
-        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse"
-          data-bs-target="#group{{ forloop.counter }}">
+        <button class="expand-btn">
           <i class="fas fa-chevron-down"></i>
         </button>
       </div>
 
       <div class="collapse" id="group{{ forloop.counter }}">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="table-light">
+        <div class="students-table">
+          <table>
+            <thead>
               <tr>
-                <th class="text-center" style="width: 50px">#</th>
-                <th>Full Name</th>
-                <th>Course</th>
-                <th>Group</th>
-                <th>Schedule</th>
-                <th>Contact</th>
+                <th style="width: 50px">#</th>
+                <th>O'quvchi</th>
+                <th>Kurs</th>
+                <th>Guruh</th>
+                <th>Dars Vaqti</th>
+                <th>Telefon</th>
               </tr>
             </thead>
             <tbody>
@@ -53,34 +63,35 @@
               <tr>
                 <td class="text-center">{{ forloop.counter }}</td>
                 <td>
-                  <a href="{% url 'student_profile' student.pk %}" class="text-decoration-none">
-                    <div class="d-flex align-items-center student-link">
-                      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2"
-                        style="width: 35px; height: 35px;">
-                        <i class="fas fa-user text-primary"></i>
+                  <a href="{% url 'student_profile' student.pk %}" class="student-link">
+                    <div class="student-info">
+                      <div class="student-avatar">
+                        <i class="fas fa-user"></i>
                       </div>
-                      <span class="student-name">{{ student.first_name }} {{ student.last_name }}</span>
+                      <span>{{ student.first_name }} {{ student.last_name }}</span>
                     </div>
                   </a>
                 </td>
                 <td>{{ student.group.course.name }}</td>
                 <td>{{ student.group.name }}</td>
                 <td>
-                  <i class="far fa-clock me-1"></i>
-                  {{ student.group.schedule }}
+                  <span class="schedule-badge">
+                    <i class="far fa-clock"></i>
+                    {{ student.group.schedule }}
+                  </span>
                 </td>
                 <td>
-                  <a href="tel:{{ student.phone }}" class="text-decoration-none">
-                    <i class="fas fa-phone me-1"></i>
+                  <a href="tel:{{ student.phone }}" class="phone-link">
+                    <i class="fas fa-phone"></i>
                     {{ student.phone }}
                   </a>
                 </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6" class="text-center py-4">
-                  <i class="fas fa-users-slash text-muted mb-2" style="font-size: 24px;"></i>
-                  <p class="mb-0">No students in this group</p>
+                <td colspan="6" class="empty-state">
+                  <i class="fas fa-users-slash"></i>
+                  <p>Bu guruhda o'quvchilar yo'q</p>
                 </td>
               </tr>
               {% endfor %}
@@ -92,42 +103,262 @@
     {% endfor %}
   </div>
 </div>
-</div>
 
 <style>
-  .student-link {
+  .dashboard-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Profile Card Styles */
+  .profile-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #4361ee, #3f37c9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: white;
+    font-weight: 600;
+  }
+
+  .profile-info h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+  }
+
+  .profile-stats {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4a5568;
+  }
+
+  /* Groups Grid Styles */
+  .groups-container {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .group-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
   }
 
-  .student-link:hover {
-    transform: translateX(5px);
+  .group-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
   }
 
-  .student-link:hover .student-name {
-    color: #0d6efd;
+  .group-header {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
   }
 
-  .student-name {
-    transition: color 0.3s ease;
+  .group-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
-  .fa-chevron-down {
+  .group-title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #2d3748;
+  }
+
+  .group-badge {
+    background: #4361ee;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+  }
+
+  .group-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    color: #718096;
+    font-size: 0.875rem;
+  }
+
+  .expand-btn {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
     transition: transform 0.3s ease;
   }
 
-  [aria-expanded="true"] .fa-chevron-down {
+  [aria-expanded="true"] .expand-btn i {
     transform: rotate(180deg);
   }
+
+  /* Table Styles */
+  .students-table {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  td {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .student-link {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .student-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .student-avatar {
+    width: 40px;
+    height: 40px;
+    background: #f0f4ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4361ee;
+  }
+
+  .schedule-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: #f0f4ff;
+    border-radius: 20px;
+    color: #4361ee;
+  }
+
+  .phone-link {
+    text-decoration: none;
+    color: #4a5568;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+  }
+
+  .phone-link:hover {
+    color: #4361ee;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #718096;
+  }
+
+  .empty-state i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-container {
+      padding: 1rem;
+    }
+
+    .profile-header {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .profile-stats {
+      justify-content: center;
+    }
+
+    .group-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .group-title {
+      flex-direction: column;
+    }
+
+    .group-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+  }
 </style>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Initialize all collapse elements
     const collapseElements = document.querySelectorAll('.collapse');
     collapseElements.forEach(collapse => {
       new bootstrap.Collapse(collapse, {
         toggle: false
+      });
+    });
+
+    // Add smooth animation to chevron icons
+    const groupHeaders = document.querySelectorAll('.group-header');
+    groupHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const chevron = header.querySelector('.fa-chevron-down');
+        chevron.style.transform = header.getAttribute('aria-expanded') === 'true'
+          ? 'rotate(0deg)'
+          : 'rotate(180deg)';
       });
     });
   });

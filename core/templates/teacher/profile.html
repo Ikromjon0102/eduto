@@ -1,0 +1,118 @@
+{% extends 'teacher_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Statistika kartalari -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Guruhlar</h5>
+                    <h2 class="card-text">{{ groups.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">O'quvchilar</h5>
+                    <h2 class="card-text">{{ students_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-success">To'laganlar</h5>
+                    <h2 class="card-text">{{ paid_students_count }}</h2> <h5>{{ total_paid_amount }} so'm</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">To'lamaganlar</h5>
+                    <h2 class="card-text">{{ unpaid_students_count }}</h2>
+                    <button class="btn btn-danger btn-sm" id="viewUnpaidStudents">Ko'rish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dars jadvali -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Dars jadvali</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Guruh</th>
+                            <th>Fan</th>
+                            <th>Vaqt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lesson in schedule %}
+                        <tr>
+                            <td>{{ lesson.name }}</td>
+                            <td>{{ lesson.course.name }}</td>
+                            <td>{{ lesson.get_schedule_display }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal oynasi -->
+    <div class="modal fade" id="unpaidStudentsModal" tabindex="-1" aria-labelledby="unpaidStudentsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unpaidStudentsModalLabel">To'lamagan o'quvchilar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="unpaidStudentsModalBody">
+                    <!-- Dinamik ma'lumotlar joylashadi -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('viewUnpaidStudents').addEventListener('click', function () {
+            fetch('{% url "unpaid_students" %}') // API endpoint
+                .then(response => response.json())
+                .then(data => {
+                    let modalContent = `<table class="table">
+                        <thead>
+                            <tr>
+                                <th>F.I.O</th>
+                                <th>Telefon</th>
+                                <th>Guruh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(student => `
+                                <tr>
+                                    <td>${student.first_name} ${student.last_name}</td>
+                                    <td>${student.phone || '-'}</td>
+                                    <td>${student.group__name || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>`;
+
+                    const modal = new bootstrap.Modal(document.getElementById('unpaidStudentsModal'));
+                    document.getElementById('unpaidStudentsModalBody').innerHTML = modalContent;
+                    modal.show();
+                });
+        });
+    </script>
+</div>
+{% endblock %}

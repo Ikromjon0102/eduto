@@ -1,8 +1,10 @@
-from django import forms
-from django.db.models import Model
-from django.forms import ModelForm
-from .models import User, Course, Group, Payment, User
 
+from django.forms import ModelForm
+from django.urls import reverse_lazy
+
+from .models import User, Course, Group, Payment, User
+from django import forms
+from .models import Grade
 
 class UserCreateForm(ModelForm):
     class Meta:
@@ -38,24 +40,34 @@ class GroupCreateForm(ModelForm):
     def save(self, commit = True):
         return super().save(commit)
 
-
-# forms.py
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
-        fields = ['group', 'student', 'month', 'amount', 'comment', 'course']
+        fields = ['group', 'student', 'month_period', 'amount', 'comment', 'payment_method']
         widgets = {
-            'comment': forms.Textarea(attrs={'rows': 3}),
-            'month': forms.NumberInput(attrs={'min': 1}),
-            'course': forms.HiddenInput(),
-        }
+            'group': forms.Select(attrs={
+                'hx-get': reverse_lazy('load_students'),
+                'hx-target': '#id_student',
+                'hx-trigger': 'change'})}
+
+        payment_method = forms.ChoiceField(
+            choices=Payment.PAYMENT_METHODS,
+            widget=forms.RadioSelect(attrs={'class': 'd-none'}),  # Asosiy inputni yashirish
+            initial='cash'
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['group'].widget.attrs.update({
+            'hx-get': reverse_lazy('load_students'),
+            'hx-target': '#id_student',  # ID to'g'ri ekanligiga ishonch hosil qiling
+            'hx-trigger': 'change'
+        })
         self.fields['group'].label = "Guruh"
         self.fields['student'].label = "O'quvchi"
-        self.fields['month'].label = "To'lov oyi"
+        self.fields['month_period'].label = "Oylik davr"
         self.fields['amount'].label = "To'lov summasi"
+        self.fields['payment_method'].label = "To'lov usuli"
         self.fields['comment'].label = "Izoh"
 
         # Agar guruh tanlangan bo'lsa, o'quvchilar ro'yxatini filter qilish
@@ -83,12 +95,10 @@ class PaymentForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         group = cleaned_data.get('group')
-
         if group:
-            # Guruhdan kursni olish
             cleaned_data['course'] = group.course
-
         return cleaned_data
+
 
 
 class PaymentPersonalForm(forms.ModelForm):
@@ -104,4 +114,14 @@ class PaymentPersonalForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3
             })
+        }
+
+
+
+class GradeForm(forms.ModelForm):
+    class Meta:
+        model = Grade
+        fields = ['student', 'grade', 'comment', 'month_period']
+        widgets = {
+            'comment': forms.Textarea(attrs={'rows': 3}),
         }

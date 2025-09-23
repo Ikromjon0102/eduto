@@ -1,0 +1,146 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>O'qituvchi paneli</title>
+    <style>
+        :root {
+            --primary-color: #2c6bed;
+            --secondary-color: #2558bf;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --light-bg: #f8f9fa;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+        }
+
+        .btn-custom {
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            width: 100%;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-custom:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider {
+            margin: 2rem 0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .user-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .user-info p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="user-info">
+            <img src="{{ request.user.image.url }}" alt="Profile">
+            <h3>{{ request.user.get_full_name }}</h3>
+            <p>O'qituvchi</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mt-4">
+            <a href="{% url 'teacher_profile' %}" class="btn btn-custom">
+                <i class="fas fa-home me-2"></i>Bosh sahifa
+            </a>
+            <a href="{% url 'teacher_students' %}" class="btn btn-custom">
+                <i class="fas fa-users me-2"></i>O'quvchilar
+            </a>
+            <a href="{% url 'add_grade_profile' %}" class="btn btn-custom">
+                <i class="fas fa-star me-2"></i>Baholash
+            </a>
+            <a href="{% url 'teacher_groups' %}" class="btn btn-custom">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Guruhlar
+            </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mt-4">
+            <form action="{% url 'logout' %}" method="post"> {% csrf_token %}
+                <button type="submit" class="btn btn-custom">
+                    <i class="fas fa-sign-out-alt me-2"></i>Chiqish
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,283 @@
+{% extends 'teacher_base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    {% for group in groups %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>{{ group.name }}
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <small class="text-muted d-block">Kurs</small>
+                        <strong>{{ group.course.name }}</strong>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">O'quvchilar</small>
+                        <strong>{{ group.student_count }}</strong>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <small class="text-muted d-block">Boshlanish</small>
+                        <strong>{{ group.start_date }}</strong>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">Tugash</small>
+                        <strong>{{ group.end_date }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Dars jadvali</small>
+                    <strong>{{ group.get_schedule_display }}</strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ group.course.duration_months }} oy
+                    </span>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#studentsModal"
+                        data-group-id="{{ group.id }}" data-group-name="{{ group.name }}">
+                        <i class="fas fa-users me-1"></i>
+                        O'quvchilar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- O'quvchilar Modal -->
+<div class="modal fade" id="studentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users me-2"></i>
+                    <span id="groupName"></span> - O'quvchilar ro'yxati
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>F.I.O</th>
+                                <th>Telefon</th>
+                                <th>Jami baholar</th>
+                                <th>O'rtacha ball</th>
+                                <th>Bugungi baho</th>
+                                <th>Baholash</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsList">
+                            <!-- JavaScript orqali to'ldiriladi -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .star-rating {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        gap: 4px;
+    }
+
+    .star-rating input {
+        display: none;
+    }
+
+    .star-rating label {
+        color: #ddd;
+        cursor: pointer;
+        font-size: 1.5rem;
+        transition: color 0.2s;
+    }
+
+    .star-rating :checked~label {
+        color: #ffd700;
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover~label {
+        color: #ffd700;
+    }
+
+    .rating-success {
+        animation: success-animation 0.5s ease-in-out;
+    }
+
+    @keyframes success-animation {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // Toast xabarni ko'rsatish uchun funksiya
+    function showToast(message) {
+        // Eski toast ni o'chirish
+        const oldToast = document.querySelector('.toast');
+        if (oldToast) {
+            oldToast.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    document.querySelectorAll('.star-rating input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const starRating = e.target.closest('.star-rating');
+            const studentId = starRating.dataset.studentId;
+            const grade = e.target.value;
+
+            const result = await rateStudent(studentId, grade);
+            if (result && result.success) {
+                // Update average grade display
+                const avgGradeEl = document.querySelector(`.average-grade-${studentId}`);
+                if (avgGradeEl) {
+                    avgGradeEl.textContent = result.average_grade.toFixed(1);
+                }
+
+                // Highlight selected stars
+                const stars = starRating.querySelectorAll('label');
+                stars.forEach((star, index) => {
+                    if (index < grade) {
+                        star.style.color = '#ffd700';
+                    } else {
+                        star.style.color = '#ddd';
+                    }
+                });
+            }
+        });
+    });
+
+    async function getGroupStudents(groupId) {
+        const response = await fetch(`/api/groups/${groupId}/students/`);
+        const students = await response.json();
+        return students;
+    }
+
+    async function rateStudent(studentId, grade) {
+        try {
+            const response = await fetch('/teacher/add_grade/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    student: studentId,
+                    grade: parseInt(grade)
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Baholashda xatolik yuz berdi');
+            }
+
+            // Toast orqali muvaffaqiyat xabarini ko'rsatish
+            showToast(data.message || "Baho muvaffaqiyatli qo'shildi");
+
+            return data;
+        } catch (error) {
+            console.error('Xatolik:', error);
+            showToast('Xatolik: ' + error.message);
+            return null;
+        }
+    }
+
+
+
+    const studentsModal = document.getElementById('studentsModal');
+    studentsModal.addEventListener('show.bs.modal', async event => {
+        const button = event.relatedTarget;
+        const groupId = button.getAttribute('data-group-id');
+        const groupName = button.getAttribute('data-group-name');
+
+        studentsModal.querySelector('#groupName').textContent = groupName;
+
+        const students = await getGroupStudents(groupId);
+        const tbody = studentsModal.querySelector('#studentsList');
+        tbody.innerHTML = students.map(student => `
+        <tr>
+            <td>
+                <img src="${student.image}" alt="Profile" class="rounded-circle me-2" style="width: 32px; height: 32px;">
+                ${student.full_name}
+            </td>
+            <td>${(student.phone || '-').split('-')[0].trim()}</td>
+            <td>${student.sum }</td>
+            <td class="average-grade-${student.id}">${student.average_grade ? student.average_grade.toFixed(1) : '-'}</td>
+            <td class="today-grade-${student.id}">${student.today_grade ? student.today_grade : '-'}</td>
+            <td>
+                <div class="star-rating" data-student-id="${student.id}">
+                    ${[5, 4, 3, 2, 1].map(grade => `
+                        <input type="radio" id="star${grade}-${student.id}" name="rating-${student.id}" value="${grade}" ${student.today_grade == grade ? 'checked' : ''} />
+                        <label for="star${grade}-${student.id}">★</label>
+                    `).join('')}
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+        document.querySelectorAll('.star-rating input').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const starRating = e.target.closest('.star-rating');
+                const studentId = starRating.dataset.studentId;
+                const grade = e.target.value;
+
+                const result = await rateStudent(studentId, grade);
+                if (result && result.success) {
+                    // O'rtacha bahoni yangilash
+                    const avgGradeEl = document.querySelector(`.average-grade-${studentId}`);
+                    if (avgGradeEl) {
+                        avgGradeEl.textContent = result.average_grade.toFixed(1);
+                    }
+
+                    // Bugungi bahoni yangilash
+                    const todayGradeEl = document.querySelector(`.today-grade-${studentId}`);
+                    if (todayGradeEl) {
+                        todayGradeEl.textContent = grade;
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
