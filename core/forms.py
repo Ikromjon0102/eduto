@@ -18,11 +18,13 @@ class GroupEditForm(ModelForm):
 class UserCreateForm(ModelForm):
     class Meta:
         model = User
-        fields = ('username', 'group', 'first_name', 'last_name', 'role', 'phone', 'image')
+        fields = ('first_name', 'last_name', 'phone', 'image')
 
 
     def save(self, commit=True):
+
         user = super().save(commit)
+        user.username = self.cleaned_data['first_name'].lower() + '_' + self.cleaned_data['last_name'].lower()
         user.save()
 
         return user
