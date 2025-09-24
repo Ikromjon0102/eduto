@@ -16,8 +16,17 @@ SECRET_KEY = 'django-insecure-dj7@4zzc=qqp_-sr_r=gjjmlksw386y%v1ns3c%vosr7j!to+h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = [
+    'http://bloglar.pythonanywhere.com',
+    'https://bloglar.pythonanywhere.com',
+    'https://*.pythonanywhere.com',
+]
 
+ALLOWED_HOSTS = ['bloglar.pythonanywhere.com','.pythonanywhere.com']
+
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 # Application definition
 
@@ -59,11 +68,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'core.context_processors.sidebar_forms',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # 'core.context_processors.Profile.as_view()'
             ],
         },
     },
