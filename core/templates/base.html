@@ -137,109 +137,198 @@
         {% block content %}   {% endblock %}
     </div>
 
-    <!-- Modallar -->
-    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addStudentModalLabel">Applicant qo'shish</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{% url 'manager_page' %}" method="post">
-                        {% csrf_token %}
-                        {{ form_student|crispy }}
-                        <div class="modal-footer">
-                            <button type="reset" class="btn btn-warning">
-                                Tozalash
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Saqlash
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<!--    &lt;!&ndash; Modallar &ndash;&gt;-->
+<!--    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel"-->
+<!--        aria-hidden="true">-->
+<!--        <div class="modal-dialog">-->
+<!--            <div class="modal-content">-->
+<!--                <div class="modal-header">-->
+<!--                    <h5 class="modal-title" id="addStudentModalLabel">Applicant qo'shish</h5>-->
+<!--                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                </div>-->
+<!--                <div class="modal-body">-->
+<!--                    <form action="{% url 'manager_page' %}" method="post">-->
+<!--                        {% csrf_token %}-->
+<!--                        {{ form_student|crispy }}-->
+<!--                        <div class="modal-footer">-->
+<!--                            <button type="reset" class="btn btn-warning">-->
+<!--                                Tozalash-->
+<!--                            </button>-->
+<!--                            <button type="submit" class="btn btn-primary">-->
+<!--                                Saqlash-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                    </form>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!--    <div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="addTeacherModalLabel"-->
+<!--        aria-hidden="true">-->
+<!--        <div class="modal-dialog">-->
+<!--            <div class="modal-content">-->
+<!--                <div class="modal-header">-->
+<!--                    <h5 class="modal-title" id="addTeacherModalLabel">Uztoz qo'shish</h5>-->
+<!--                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                </div>-->
+<!--                <div class="modal-body">-->
+<!--                    <form action="{% url 'manager_page' %}" method="post">-->
+<!--                        {% csrf_token %}-->
+<!--                        {{ form_teacher|crispy }}-->
+<!--                        <div class="modal-footer">-->
+<!--                            <button type="reset" class="btn btn-warning">-->
+<!--                                Tozalash-->
+<!--                            </button>-->
+<!--                            <button type="submit" class="btn btn-primary">-->
+<!--                                Saqlash-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                    </form>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+
+
+<!--<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">-->
+<!--    <div class="modal-dialog">-->
+<!--        <div class="modal-content">-->
+<!--            <div class="modal-header">-->
+<!--                <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>-->
+<!--                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--            </div>-->
+<!--            <div class="modal-body">-->
+<!--                <form action="{% url 'manager_page' %}" method="post">-->
+<!--                    {% csrf_token %}-->
+
+<!--                    {{ form_group|crispy }}-->
+
+<!--                    <div class="modal-footer">-->
+<!--                        <button type="reset" class="btn btn-outline-warning">Tozalash</button>-->
+<!--                        <button type="submit" class="btn btn-success">Saqlash</button>-->
+<!--                    </div>-->
+<!--                </form>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+
+<!--    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">-->
+<!--        <div class="modal-dialog">-->
+<!--            <div class="modal-content">-->
+<!--                <div class="modal-header">-->
+<!--                    <h5 class="modal-title" id="addCourseModalLabel">Kurs qo'shish</h5>-->
+<!--                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                </div>-->
+<!--                <div class="modal-body">-->
+<!--                    <form action="{% url 'manager_page' %}" method="post">-->
+<!--                        {% csrf_token %}-->
+<!--                        {{ form_course|crispy }}-->
+<!--                        <div class="modal-footer">-->
+<!--                            <button type="reset" class="btn btn-warning">-->
+<!--                                Tozalash-->
+<!--                            </button>-->
+<!--                            <button type="submit" class="btn btn-primary">-->
+<!--                                Saqlash-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                    </form>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <!-- Applicant qo'shish -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addStudentModalLabel">Applicant qo'shish</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'applicant_create' %}" method="post">
+          {% csrf_token %}
+          {{ form_student|crispy }}
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-warning">Tozalash</button>
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+          </div>
+        </form>
+      </div>
     </div>
-
-    <div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="addTeacherModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addTeacherModalLabel">Uztoz qo'shish</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{% url 'manager_page' %}" method="post">
-                        {% csrf_token %}
-                        {{ form_teacher|crispy }}
-                        <div class="modal-footer">
-                            <button type="reset" class="btn btn-warning">
-                                Tozalash
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Saqlash
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{% url 'manager_page' %}" method="post">
-                    {% csrf_token %}
-
-                    {{ form_group|crispy }}
-
-                    <div class="modal-footer">
-                        <button type="reset" class="btn btn-outline-warning">Tozalash</button>
-                        <button type="submit" class="btn btn-success">Saqlash</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
-
-    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addCourseModalLabel">Kurs qo'shish</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{% url 'manager_page' %}" method="post">
-                        {% csrf_token %}
-                        {{ form_course|crispy }}
-                        <div class="modal-footer">
-                            <button type="reset" class="btn btn-warning">
-                                Tozalash
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Saqlash
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<!-- Ustoz qo'shish -->
+<div class="modal fade" id="addTeacherModal" tabindex="-1" aria-labelledby="addTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addTeacherModalLabel">Ustoz qo'shish</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'teacher_create' %}" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form_teacher|crispy }}
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-warning">Tozalash</button>
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Guruh qo'shish -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addGroupModalLabel">Guruh qo'shish</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'group_create' %}" method="post">
+          {% csrf_token %}
+          {{ form_group|crispy }}
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-outline-warning">Tozalash</button>
+            <button type="submit" class="btn btn-success">Saqlash</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Kurs qo'shish -->
+<div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCourseModalLabel">Kurs qo'shish</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{% url 'course_create' %}" method="post">
+          {% csrf_token %}
+          {{ form_course|crispy }}
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-warning">Tozalash</button>
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}

@@ -36,59 +36,9 @@ class CustomLoginView(LoginView):
             return reverse_lazy('teacher_profile')
         return reverse_lazy('manager_page')
 
-
-# class Profile(View):
 #
-#     def get(self, request):
-#         form1 = UserCreateForm()
-#         form2 = CourseCreateForm()
-#         form3 = GroupCreateForm()
-#         students = User.objects.filter(role = 'student')
-#         teachers = User.objects.filter(role = 'teacher')
-#         courses = Course.objects.all()
-#         groups = Group.objects.all()
-#
-#         context = {
-#             'courses': courses,
-#             'groups': groups,
-#             'form_student': form1,
-#             'form_course': form2,
-#             'form_group': form3,
-#             'teachers':teachers,
-#             'students': students
-#         }
-#         return render(request, 'admin.html', context )
-#
-#
-#     def post(self, request):
-#         create_form = UserCreateForm(data=request.POST)
-#         create_course_form = CourseCreateForm(data=request.POST)
-#         create_group_form = GroupCreateForm(data=request.POST)
-#         if create_form.is_valid():
-#             create_form.save()
-#             return redirect('manager_page')
-#
-#         elif create_course_form.is_valid():
-#             create_course_form.save()
-#             return redirect('manager_page')
-#
-#         elif create_group_form.is_valid():
-#             create_group_form.save()
-#             return redirect('manager_page')
-#         else:
-#             context = {
-#                 'form_student': create_form,
-#                 'form_course': create_course_form,
-#                 'form_group': create_group_form,
-#             }
-#             return render(request, 'admin.html', context)
-
 class Profile(View):
     def get(self, request):
-        form1 = ApplicantCreateForm()
-        form2 = CourseCreateForm()
-        form3 = GroupCreateForm()
-        form4 = UserCreateForm()
         students = User.objects.filter(Q(role='student') & Q(group__isnull=False))
         applicants = User.objects.filter(role='applicant')# Applicantlar
         # applicants = User.objects.filter(Q(role='applicant') | Q(role='student',  group=None)) # Applicantlar
@@ -99,46 +49,93 @@ class Profile(View):
         context = {
             'courses': courses,
             'groups': groups,
-            'form_student': form1,
-            'form_course': form2,
-            'form_group': form3,
-            'form_teacher': form4,
             'teachers': teachers,
             'students': students,
             'applicants': applicants,
         }
         return render(request, 'admin.html', context)
 
-    def post(self, request):
-        create_form = UserCreateForm(data=request.POST)
-        create_course_form = CourseCreateForm(data=request.POST)
-        create_group_form = GroupCreateForm(data=request.POST)
-        applicant_form = ApplicantCreateForm(data=request.POST)  # Yangi qo‘shildi
+    # def post(self, request):
+    #     create_form = UserCreateForm(data=request.POST)
+    #     create_course_form = CourseCreateForm(data=request.POST)
+    #     create_group_form = GroupCreateForm(data=request.POST)
+    #     applicant_form = ApplicantCreateForm(data=request.POST)  # Yangi qo‘shildi
+    #
+    #     if applicant_form.is_valid():
+    #         applicant_form.save()
+    #         return redirect('manager_page')
+    #
+    #     elif create_form.is_valid():
+    #         create_form.save()
+    #         return redirect('manager_page')
+    #
+    #     elif create_course_form.is_valid():
+    #         create_course_form.save()
+    #         return redirect('manager_page')
+    #
+    #     elif create_group_form.is_valid():
+    #         create_group_form.save()
+    #         return redirect('manager_page')
+    #
+    #     else:
+    #         context = {
+    #             'form_student': applicant_form,  # O'zgartirildi
+    #             'form_course': create_course_form,
+    #             'form_group': create_group_form,
+    #             'form_teacher': create_form,  # O'zgartirildi
+    #         }
+    #         return render(request, 'admin.html', context)
 
-        if applicant_form.is_valid():
-            applicant_form.save()
-            return redirect('manager_page')
 
-        elif create_form.is_valid():
-            create_form.save()
-            return redirect('manager_page')
+from django.shortcuts import redirect
+from django.contrib import messages
+from .forms import ApplicantCreateForm, CourseCreateForm, GroupCreateForm, UserCreateForm
 
-        elif create_course_form.is_valid():
-            create_course_form.save()
-            return redirect('manager_page')
+def _go_back(request, fallback="manager_page"):
+    # POST qayerdan kelgan bo‘lsa, o‘sha sahifaga qaytaramiz
+    return redirect(request.META.get("HTTP_REFERER") or fallback)
 
-        elif create_group_form.is_valid():
-            create_group_form.save()
-            return redirect('manager_page')
-
+def applicant_create(request):
+    if request.method == "POST":
+        form = ApplicantCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Applicant qo‘shildi.")
         else:
-            context = {
-                'form_student': applicant_form,  # O'zgartirildi
-                'form_course': create_course_form,
-                'form_group': create_group_form,
-                'form_teacher': create_form,  # O'zgartirildi
-            }
-            return render(request, 'admin.html', context)
+            messages.error(request, "Xatolik: formani tekshiring.")
+    return _go_back(request)
+
+def course_create(request):
+    if request.method == "POST":
+        form = CourseCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Kurs qo‘shildi.")
+        else:
+            messages.error(request, "Xatolik: formani tekshiring.")
+    return _go_back(request)
+
+def group_create(request):
+    if request.method == "POST":
+        form = GroupCreateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Guruh qo‘shildi.")
+        else:
+            messages.error(request, "Xatolik: formani tekshiring.")
+    return _go_back(request)
+
+def teacher_create(request):
+    if request.method == "POST":
+
+        form = UserCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+
+            form.save()
+            messages.success(request, "O‘qituvchi qo‘shildi.")
+        else:
+            messages.error(request, "Xatolik: formani tekshiring.")
+    return _go_back(request)
 
 
 class UstozPorfileView(View):
@@ -160,6 +157,43 @@ class UstozPorfileView(View):
             'total_students': alll
         }
         return render(request, 'teacher_page.html', context)
+
+
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.views.decorators.http import require_POST
+from django.db import transaction
+from django.db.models.deletion import ProtectedError
+
+from .models import User  # sizdagi User modeli
+# role='student' bilan ishlatyapmiz
+
+@require_POST
+def students_bulk_delete(request):
+    ids = request.POST.getlist("ids")  # <input name="ids" ...> lar ro‘yxati
+    if not ids:
+        messages.warning(request, "Hech bir student tanlanmadi.")
+        return redirect(request.META.get("HTTP_REFERER") or "manager_page")
+
+    # (ixtiyoriy) ruxsat tekshiruvi
+    if not request.user.is_superuser and getattr(request.user, "role", "") not in ("admin", "manager"):
+        messages.error(request, "Sizda ushbu amal uchun ruxsat yo‘q.")
+        return redirect(request.META.get("HTTP_REFERER") or "manager_page")
+
+    qs = User.objects.filter(id__in=ids, role="student")
+    count = qs.count()
+
+    try:
+        with transaction.atomic():
+            qs.delete()  # FK PROTECT bo‘lsa ProtectedError berishi mumkin
+        messages.success(request, f"{count} ta student o‘chirildi.")
+    except ProtectedError:
+        messages.error(
+            request,
+            "Ba'zi studentlar o‘chirilmadi: ular bilan bog‘liq yozuvlar (to‘lovlar, davomat va h.k.) mavjud."
+        )
+
+    return redirect(request.META.get("HTTP_REFERER") or "manager_page")
 
 
 def generate_pdf_report(request):
@@ -240,9 +274,9 @@ def download_template_with_data(request):
     workbook.save(response)
     return response
 
-def import_from_excel(request):
 
-    # print(request)
+
+def import_from_excel(request):
     if request.method == 'POST' and request.FILES['excel_file']:
         excel_file = request.FILES['excel_file']
 
@@ -292,6 +326,7 @@ def import_from_excel(request):
     return render(request, 'upload.html')  # Agar POST bo'lmasa, formani ko'rsatish
 
 
+
 def excel_page(request):
     return render(request, 'payment.html')
 
@@ -327,19 +362,6 @@ def load_students(request):
             ]
         })
     return JsonResponse({'students': []})
-
-# def load_students(request):
-#     """Guruh bo'yicha o'quvchilarni yuklash uchun AJAX view"""
-#     group_id = request.GET.get('group')
-#     if group_id:
-#         students = User.objects.filter(group_id=group_id, role='student')
-#         print(group_id, students)
-#         return JsonResponse({
-#             'students': [{'id': student.id, 'name': student.get_full_name() or student.username}
-#                          for student in students]
-#         })
-#
-#     return JsonResponse({'students': []})
 
 
 def group_details(request, group_id):
@@ -674,7 +696,6 @@ def teacher_students(request):
 
 
 
-
 @login_required
 @user_passes_test(is_teacher)
 def add_grade_profile(request):
@@ -923,42 +944,3 @@ class PaymentCreateView(View):
                     messages.error(request, f"{field}: {error}")
         return render(request, self.template_name, {'form': form})
 
-
-# class PaymentCreateView(View):
-#     template_name = 'payments/payment_form.html'
-#
-#     def get(self, request):
-#         form = PaymentForm()
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = PaymentForm(request.POST)
-#         if form.is_valid():
-#             payment = form.save()
-#             messages.success(request, "To'lov muvaffaqiyatli qo'shildi!")
-#             return HttpResponse("<div class='alert alert-success'>To'lov muvaffaqiyatli qo'shildi!</div>")
-#
-#         return render(request, self.template_name, {'form': form})
-
-# class PaymentCreateView(View):
-#     template_name = 'payments/payment_form.html'
-#
-#     def get(self, request):
-#         form = PaymentForm()
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = PaymentForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return HttpResponse("""
-#                 <div class="alert alert-success">
-#                     To'lov muvaffaqiyatli qo'shildi!
-#                 </div>
-#                 <script>
-#                     window.setTimeout(() => {
-#                         window.location.reload();
-#                     }, 1500);
-#                 </script>
-#             """)
-#         return render(request, self.template_name, {'form': form})

@@ -11,6 +11,8 @@ from .views import (Profile, generate_excel_report, generate_pdf_report,
                     CustomLoginView, add_grade_profile, unpaid_students, StudentProfileForTeacherView,
                     download_template_with_data, PaymentReportView, PaymentSearchView)
 
+from . import views
+
 
 
 urlpatterns = [
@@ -19,6 +21,12 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 
     path('manager/', Profile.as_view(), name='manager_page'),
+
+
+    path("create/applicant/", views.applicant_create, name="applicant_create"),
+    path("create/course/", views.course_create, name="course_create"),
+    path("create/group/", views.group_create, name="group_create"),
+    path("create/teacher/", views.teacher_create, name="teacher_create"),
 
     path('payments/report/', PaymentReportView.as_view(), name='payment_report'),
     path('payments/add/', PaymentCreateView.as_view(), name='payment_add'),
@@ -30,6 +38,8 @@ urlpatterns = [
     path('teacher/students/', teacher_students, name='teacher_students'),
     path('teacher/add_grade/profile/', add_grade_profile, name='add_grade_profile'),
     path('teacher/add_grade/', add_grade, name='add_grade'),
+
+    path("students/bulk-delete/", views.students_bulk_delete, name="students_bulk_delete"),
 
     path('teacher/<int:ustoz_id>', UstozPorfileView.as_view(), name='teacher_page'),
 

@@ -7,7 +7,8 @@
   <div class="profile-card">
     <div class="profile-header">
       <div class="profile-avatar">
-        {{ teacher.first_name|first }}{{ teacher.last_name|first }}
+<!--        {{ teacher.first_name|first }}{{ teacher.last_name|first }}-->
+          <img class="profile-avatar" src="{{ teacher.image.url }}" alt="{{ teacher.first_name }}">
       </div>
       <div class="profile-info">
         <h1>{{ teacher.first_name }} {{ teacher.last_name }}</h1>
